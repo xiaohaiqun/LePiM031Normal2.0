@@ -1,5 +1,5 @@
 #include <i2c.h>
-
+uint8_t i2c0InUseFlag=0;
 void I2C0_GPIO_Init(){
 	CLK_EnableModuleClock(I2C0_MODULE);
 	SYS->GPC_MFPL = (SYS->GPC_MFPL & ~(SYS_GPC_MFPL_PC0MFP_Msk | SYS_GPC_MFPL_PC1MFP_Msk)) |
