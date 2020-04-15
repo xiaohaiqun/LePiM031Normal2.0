@@ -1,7 +1,4 @@
-#include <i2c.h>
-#include <stdio.h>
-#include <pwm_light.h>
-
+#include "I2c1Dev.h"
 
 void I2C1_GPIO_Init(void)
 {
@@ -36,32 +33,20 @@ void I2C1_Close(void)
     CLK_DisableModuleClock(I2C1_MODULE);
 }
 
-extern uint8_t NowBtn;
-extern void I2C1readAcc(uint8_t* data);
-extern void I2C1readGyro(uint8_t* data);
-extern void I2C1readMagn(uint8_t* data);
 
-extern void I2C1readPower(uint8_t* data);
-extern void I2C1readVout1_2_A(uint8_t* data);
-extern void I2C1readBAT_V_I(uint8_t* data);
-
-extern void PowerHandler(uint8_t u8data);
-extern void SensoODR_ONOFF_Handler(uint8_t u8data);
-
-
-
-static uint8_t Order=0;
-uint8_t data[9]={0};
-extern uint8_t btnStatus[9];
-//static uint8_t powerData[6]={0};
-static uint8_t datapoint=0;
-
-/*extern uint8_t AccP,GyroP,MagnP;
+/*extern uint8_t AccP,GyroP,MagnP; //当在I2C1中断外读取九轴数据时使用
 extern uint8_t AccData[2][6];
 extern uint8_t GyroData[2][6];
 extern uint8_t MagnData[2][6];*/
-extern uint8_t NineSensorOnOff;
-extern uint8_t i2c0InUseFlag;
+
+extern uint8_t btnStatus[9];
+
+static uint8_t Order=0;
+
+uint8_t data[9]={0};
+static uint8_t datapoint=0;
+
+
 void ReadOrderHandler(uint8_t Order)
 {
 	uint8_t i=0;	
@@ -128,7 +113,7 @@ void WriteOrderHandler(uint8_t Order,uint8_t u8data)
 			PowerHandler(u8data);
 			break;
 		case 0x46:
-			SensoODR_ONOFF_Handler(u8data);
+			SensoODR_ONOFF_Handler(u8data); //地址0x46管理传感器的开关
 			break;
 		default:
 			break;
@@ -184,6 +169,7 @@ void I2C_SlaveTxRxHandler()
 			break;			
 	}
 }
+
 void I2C1_IRQHandler(void)
 {
 	 if(I2C_GET_TIMEOUT_FLAG(I2C1))

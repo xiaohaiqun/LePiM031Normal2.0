@@ -49,53 +49,19 @@ void Button_GPIO_Init(void)
 		PB13=0;
 }
 //this shold be added to GPXXXXXXX_IRQHandle()
- static struct{
-  bool btn1;
-	bool btn2;
-	bool btn3;
-	bool btn4;
-	bool btn5;
-	bool btn6;
-	bool btn7;
-	bool btn8;
-	bool btn9;
-}ISButtonPressed={0,0,0,0,0,0,0,0,0};
 
- static struct{
-  bool btn1;
-	bool btn2;
-	bool btn3;
-	bool btn4;
-	bool btn5;
-	bool btn6;
-	bool btn7;
-	bool btn8;
-	bool btn9;
-	bool ONOFF;
-}BtnINTFlag={0,0,0,0,0,0,0,0,0,0};
-
-
-static struct {
-	uint8_t btn1;
-	uint8_t btn2;
-	uint8_t btn3;
-	uint8_t btn4;
-	uint8_t btn5;
-	uint8_t btn6;
-	uint8_t btn7;
-	uint8_t btn8;
-	uint8_t btn9;
-}BtnTimer={0,0,0,0,0,0,0,0,0};
-	
 extern uint8_t PowerState;
-uint8_t PowerBtnPressTime;
-uint8_t NowBtn=0xff;
-uint8_t Btn9timerStart=0;
 extern uint8_t LEDOnWork;
 
-uint8_t InPowerStarting=0;
+uint8_t NowBtn=0xff;
+uint8_t PowerBtnPressTime;
+
+uint8_t Btn9timerStart=0;
+
+uint8_t InPowerStarting=0;  //开机过程中标记
+uint8_t InPowerOffFlag=0;  //关机过程中的标记
 uint8_t ShutDownFlag;
-uint8_t InPowerOffFlag=0;
+
 uint8_t ShutDownTime=0;
 //Button9 按下相关操作
 void Btn9pressHandler()
@@ -117,8 +83,7 @@ void Btn9releaseHandler()
 		LEDOnWork=0;
 }
 
-extern uint8_t PowerOn(void);
-extern uint8_t PowerOff(void);
+
 extern int RGBBlinkTimes;
 void PoweBtnLongPressHandler()
 {
@@ -126,10 +91,10 @@ void PoweBtnLongPressHandler()
 	{
 		if(Btn9timerStart)
 		{
-			PowerBtnPressTime++;
+			PowerBtnPressTime++;// +1s
 			if(PowerBtnPressTime>=5)
 			{//长按关机
-				InPowerOffFlag=1;
+				InPowerOffFlag=1; //关机中标记
 				Btn9timerStart=0;
 				LEDChange(yellow);
 				PowerOff();     
@@ -139,7 +104,7 @@ void PoweBtnLongPressHandler()
 			{
 				if(PowerState==1){//软关机			
 					NowBtn=0xA9;
-					PB5=!PB5;
+					PB5=!PB5;  
 					LEDChange(red);
 				}
 				else if(PowerState==0)//开机
@@ -149,19 +114,20 @@ void PoweBtnLongPressHandler()
 					PowerBtnPressTime=0;
 					LEDChange(green);
 					PowerOn();
-					RGBBlinkTimes=8;
+					RGBBlinkTimes=10;
 					//powerOnLight();
 					LEDChange(dark);
 					InPowerStarting=0;
+					ShutDownFlag=0;
 				}		
 			}			
 		}
 		if(ShutDownFlag)
 		{
 			ShutDownTime++;
-			if(ShutDownTime>=7)
+			if(ShutDownTime>=10)
 			{
-				if(PB4)
+				if(PB4)//如果PB4仍然为高电平（关机信号）
 				{
 					if(!InPowerOffFlag)
 					{
@@ -274,42 +240,42 @@ void GPABIRQ2Flag(void)   //标记哪个按键触发中断，并翻转那个按�
 	volatile uint32_t temp;
 	if(GPIO_GET_INT_FLAG(PB, BIT0)){//btn1
 		GPIO_CLR_INT_FLAG(PB, BIT0);
-		BtnINTFlag.btn1=1;
+		GPIOINTFlag.btn1=1;
 		btnStatus[0]=!btnStatus[0];
   }			
 	else if(GPIO_GET_INT_FLAG(PB, BIT1)){//btn2
 		GPIO_CLR_INT_FLAG(PB, BIT1);
-		BtnINTFlag.btn2=1;
+		GPIOINTFlag.btn2=1;
 		btnStatus[1]=!btnStatus[1];
   }
 	else if(GPIO_GET_INT_FLAG(PA, BIT12)){//btn6
 		GPIO_CLR_INT_FLAG(PA, BIT12);
-		BtnINTFlag.btn6=1;
+		GPIOINTFlag.btn6=1;
 		btnStatus[5]=!btnStatus[5];
 	}
 		
 	else if(GPIO_GET_INT_FLAG(PA, BIT13)){//btn7
 		GPIO_CLR_INT_FLAG(PA, BIT13);
-		BtnINTFlag.btn7=1;
+		GPIOINTFlag.btn7=1;
 		btnStatus[6]=!btnStatus[6];
 	}
 	
 	else if(GPIO_GET_INT_FLAG(PA, BIT14)){//btn8
 		GPIO_CLR_INT_FLAG(PA, BIT14);
-		BtnINTFlag.btn8=1;
+		GPIOINTFlag.btn8=1;
 		btnStatus[7]=!btnStatus[7];
 	}	
 	
   else if(GPIO_GET_INT_FLAG(PA, BIT15)){
 		GPIO_CLR_INT_FLAG(PA, BIT15); 
-		BtnINTFlag.btn9=1;
+		GPIOINTFlag.btn9=1;
 		btnStatus[8]=!btnStatus[8];
 	}
 	///////////////generate IRQ to raspberry//////////////////
 	else if(GPIO_GET_INT_FLAG(PB, BIT4)){
 		//printf("raspberry shutdown\n");
 		GPIO_CLR_INT_FLAG(PB, BIT4);
-		BtnINTFlag.ONOFF=1;
+		GPIOINTFlag.ONOFF=1;
 	}
 	else{
 		/* Un-expected interrupt. Just clear all PB interrupts */
@@ -325,18 +291,18 @@ void GPCDEFIRQ2Flag()
 	volatile uint32_t temp;
 	if(GPIO_GET_INT_FLAG(PF, BIT3)){//btn3
 		GPIO_CLR_INT_FLAG(PF, BIT3);
-		BtnINTFlag.btn3=1;
+		GPIOINTFlag.btn3=1;
 		btnStatus[2]=!btnStatus[2];
 	}
 	else if(GPIO_GET_INT_FLAG(PF, BIT2)){//btn4
 		GPIO_CLR_INT_FLAG(PF, BIT2);
-		BtnINTFlag.btn4=1;
+		GPIOINTFlag.btn4=1;
 		btnStatus[3]=!btnStatus[3];
 	}
 		
 	else if(GPIO_GET_INT_FLAG(PF, BIT15)){//btn5
 		GPIO_CLR_INT_FLAG(PF, BIT15);
-		BtnINTFlag.btn5=1;
+		GPIOINTFlag.btn5=1;
 		btnStatus[4]=!btnStatus[4];
 	} 	
 	else{
@@ -353,9 +319,9 @@ void Button_IRQFlagHandler(void)
 { 	
 	if(hasBtnINTFlag)//按键中断标记
 	{
-		if(BtnINTFlag.btn1)//btn1
+		if(GPIOINTFlag.btn1)//btn1
 		{
-			BtnINTFlag.btn1=0;
+			GPIOINTFlag.btn1=0;
 			if(!ISButtonPressed.btn1)
 			{
 				BtnTimer.btn1=0;
@@ -377,9 +343,9 @@ void Button_IRQFlagHandler(void)
 			}
 			ISButtonPressed.btn1=!ISButtonPressed.btn1;		
 		}			
-		else if(BtnINTFlag.btn2)//btn2
+		else if(GPIOINTFlag.btn2)//btn2
 		{
-			BtnINTFlag.btn2=0;
+			GPIOINTFlag.btn2=0;
 			if(!ISButtonPressed.btn2)
 			{
 				BtnTimer.btn2=0;
@@ -402,9 +368,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn2=!ISButtonPressed.btn2;
 		}
 		
-		else if(BtnINTFlag.btn3)//btn3
+		else if(GPIOINTFlag.btn3)//btn3
 		{
-			BtnINTFlag.btn3=0;
+			GPIOINTFlag.btn3=0;
 			if(!ISButtonPressed.btn3)
 			{
 				BtnTimer.btn3=0;
@@ -427,9 +393,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn3=!ISButtonPressed.btn3;
 		}
 		
-		else if(BtnINTFlag.btn4)//btn4
+		else if(GPIOINTFlag.btn4)//btn4
 		{
-			BtnINTFlag.btn4=0;
+			GPIOINTFlag.btn4=0;
 			if(!ISButtonPressed.btn4)
 			{
 				BtnTimer.btn4=0;
@@ -452,9 +418,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn4=!ISButtonPressed.btn4;
 		}
 			
-		else if(BtnINTFlag.btn5)///btn5
+		else if(GPIOINTFlag.btn5)///btn5
 		{
-			BtnINTFlag.btn5=0;
+			GPIOINTFlag.btn5=0;
 			if(!ISButtonPressed.btn5)
 			{
 				BtnTimer.btn5=0;
@@ -477,9 +443,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn5=!ISButtonPressed.btn5;
 		} 	
 		
-		else if(BtnINTFlag.btn6)//btn6
+		else if(GPIOINTFlag.btn6)//btn6
 		{
-			BtnINTFlag.btn6=0;
+			GPIOINTFlag.btn6=0;
 			if(!ISButtonPressed.btn6)
 			{
 				BtnTimer.btn6=0;
@@ -502,9 +468,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn6=!ISButtonPressed.btn6;
 		}
 			
-		else if(BtnINTFlag.btn7)//btn7
+		else if(GPIOINTFlag.btn7)//btn7
 		{
-			BtnINTFlag.btn7=0;
+			GPIOINTFlag.btn7=0;
 			if(!ISButtonPressed.btn7)
 			{
 				BtnTimer.btn7=0;
@@ -527,9 +493,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn7=!ISButtonPressed.btn7;
 		}
 		
-		else if(BtnINTFlag.btn8)//btn8
+		else if(GPIOINTFlag.btn8)//btn8
 		{
-			BtnINTFlag.btn8=0;
+			GPIOINTFlag.btn8=0;
 			if(!ISButtonPressed.btn8)
 			{
 				BtnTimer.btn8=0;
@@ -552,9 +518,9 @@ void Button_IRQFlagHandler(void)
 			ISButtonPressed.btn8=!ISButtonPressed.btn8;
 		}	
 		
-		else if(BtnINTFlag.btn9)
+		else if(GPIOINTFlag.btn9)
 		{
-			BtnINTFlag.btn9=0;
+			GPIOINTFlag.btn9=0;
 			if(!ISButtonPressed.btn9)
 				{//开关机键按下	
 					BtnTimer.btn9=0;
@@ -579,10 +545,10 @@ void Button_IRQFlagHandler(void)
 				ISButtonPressed.btn9=!ISButtonPressed.btn9;
 		}
 		///////////////generate IRQ to raspberry//////////////////
-		if(BtnINTFlag.ONOFF){
+		if(GPIOINTFlag.ONOFF){
 			//printf("raspberry shutdown\n");
-			BtnINTFlag.ONOFF=0;
-			ShutDownFlag=1;
+			GPIOINTFlag.ONOFF=0;
+			ShutDownFlag=1;    //标记树莓派（PB4)出现了上拉电平(关机信号)
 		}
 		hasBtnINTFlag=0;
 	}

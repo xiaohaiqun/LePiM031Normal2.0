@@ -4,27 +4,20 @@
 #include <stdint.h>
 #include "NuMicro.h"
 #include "LSM6DSL.h"
-
+#include "I2C0Dev.h"
 void LSM6DSL_WriteByte(uint8_t LSM6DSL_reg, uint8_t LSM6DSL_data)
 {
-	uint8_t temp=0,n=0;
-	while(1){
-		I2C_WriteByteOneReg(I2C0,LSM6DSL_I2C_SLA ,  LSM6DSL_reg, LSM6DSL_data);
-		temp=I2C_ReadByteOneReg(LSM6DSL_I2C_PORT,LSM6DSL_I2C_SLA,LSM6DSL_reg);
-		n++;
-		if(temp==LSM6DSL_data||n>100)
-			break;
-	}
+ 	I2C_Write(LSM6DSL_I2C_SLA ,  LSM6DSL_reg, LSM6DSL_data);
 }
 
 uint8_t LSM6DSL_ReadByte(uint8_t LSM6DSL_reg)
 {
-	  return I2C_ReadByteOneReg(LSM6DSL_I2C_PORT,LSM6DSL_I2C_SLA,LSM6DSL_reg);
+	  return I2C_ReadOneByte(LSM6DSL_I2C_SLA,LSM6DSL_reg);
 }
 
 void LSM6DSL_Read6Bytes(uint8_t LSM6DSL_reg,uint8_t* data)
 {
-	I2C_ReadMultiBytesOneReg(LSM6DSL_I2C_PORT,LSM6DSL_I2C_SLA, LSM6DSL_reg,data, 6);
+	I2C_ReadMultiByte(LSM6DSL_I2C_SLA, LSM6DSL_reg,data, 6);
 }
 
 void Init_LSM6DSL(void)
@@ -57,7 +50,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x01){
 			LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL1_XL, LSM6DSL_ACC_ODR_833_HZ);
 			AccOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL1_XL);
-			if(AccOn&0xF0==LSM6DSL_GYRO_ODR_833_HZ)
+			if((AccOn&0xF0)==LSM6DSL_GYRO_ODR_833_HZ)
 				NineSensorOnOff|=0x01;//AccOn=1;
 			else
 				NineSensorOnOff&=0xFE;//AccOn=0;
@@ -65,7 +58,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	else{
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL1_XL,LSM6DSL_ACC_ODR_POWER_DOWN );
 		AccOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL1_XL);
-		if(AccOn&0xF0==LSM6DSL_ACC_ODR_POWER_DOWN)
+		if((AccOn&0xF0)==LSM6DSL_ACC_ODR_POWER_DOWN)
 			NineSensorOnOff&=0xFE;//AccOn=0;
 		else
 			NineSensorOnOff|=0x01;//AccOn=1;
@@ -73,7 +66,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x02){
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL2_G, LSM6DSL_GYRO_ODR_833_HZ);
 		GyroOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL2_G);
-		if(GyroOn&0xF0== LSM6DSL_GYRO_ODR_833_HZ)
+		if((GyroOn&0xF0)== LSM6DSL_GYRO_ODR_833_HZ)
 			NineSensorOnOff|=0x02;//GyroOn=1;
 		else
 			NineSensorOnOff&=0xFD;//GyroOn=0;
@@ -81,7 +74,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	else{	
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL2_G, LSM6DSL_GYRO_ODR_POWER_DOWN);
 		GyroOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL2_G);
-		if(GyroOn&0xF0== LSM6DSL_GYRO_ODR_POWER_DOWN)
+		if((GyroOn&0xF0)== LSM6DSL_GYRO_ODR_POWER_DOWN)
 			NineSensorOnOff&=0xFE;//GyroOn=0;
 		else
 			NineSensorOnOff|=0x02;//GyroOn=1;
@@ -89,7 +82,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x04){
 		BMM150_ToNormalMode();
 		MagnOn=I2C_ReadByteOneReg(I2C0,0x10,0x4C);
-		if(MagnOn&0x38== 0x38)
+		if((MagnOn&0x38)== 0x38)
 			NineSensorOnOff|=0x04;//MagnOn=1;
 		else
 			NineSensorOnOff&=0xF7;//MagnOn=0;
@@ -97,7 +90,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	else{
 		BMM150_ToSleepMOde();
 		MagnOn=I2C_ReadByteOneReg(I2C0,0x10,0x4C);
-		if(MagnOn&0x38== 0x00)
+		if((MagnOn&0x38)== 0x00)
 			NineSensorOnOff&=0xF7;//MagnOn=0;
 		else
 			NineSensorOnOff|=0x04;//MagnOn=1;

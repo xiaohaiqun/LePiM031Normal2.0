@@ -5,19 +5,12 @@
 #include <I2C0Dev.h>
 void BMM150_WriteByte(uint8_t LSM6DSL_reg, uint8_t BMM_data)
 {
-	uint8_t temp=0,n=0;
-	while(1){
-		I2C_WriteByteOneReg(I2C0,0x10 ,  LSM6DSL_reg, BMM_data);
-		temp=I2C_ReadByteOneReg(I2C0,0x10,LSM6DSL_reg);
-		n++;
-		if(temp==BMM_data|n>100)
-			break;
-	}
+		I2C_Write(0x10 ,  LSM6DSL_reg, BMM_data);
 }
 
 uint8_t BMM_ReadByte(uint8_t BMM_reg)
 {
-	 return I2C_ReadByteOneReg(I2C0,0x10,BMM_reg);
+	 return I2C_ReadOneByte(0x10,BMM_reg);
 }
 
 void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)

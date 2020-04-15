@@ -37,8 +37,6 @@ void LEDBlink()
 
 
 ////////////////////////////////////////////
-extern uint8_t i2cStartFlag;
-extern uint8_t i2cWaitCount;
 extern void BtnPressTimeCounter(void);
 
 uint8_t timer0flag=0;
@@ -47,11 +45,7 @@ void TMR0_IRQHandler(void)    //10ms中断一次
 { 
 	TIMER_ClearIntFlag(TIMER0);
 	timer0flag=1;
-	BtnPressTimeCounter();
-	if(i2cStartFlag)
-	{
-		i2cWaitCount++;
-	}
+	//BtnPressTimeCounter();
 }
 
 
@@ -75,7 +69,7 @@ void OneSecRound(void)
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		LEDBlink();
+		//LEDBlink();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;
 	}
 }
@@ -85,6 +79,7 @@ void TenMicSecRound(void)
 	if(timer0flag)
 	{
 		OneSecTickGenerator();
+		BtnPressTimeCounter();
 		RGB_Blink();
 		timer0flag=0;
 	}

@@ -65,8 +65,10 @@ void RGB_Blink(void)
 		{
 			RGBBlinkTimes--;
 			n=0;
+			LEDChange(dark);
 		}
 	}
+	
 }
 
 
@@ -139,6 +141,7 @@ void LED1Change(uint8_t Ledstate)
 		PWM_ConfigOutputChannel(PWM0,bluepin1 , 2400000,b);
 }
 
+
 void LED2Change(uint8_t Ledstate)
 {
 		uint8_t r=100,g=100,b=100;
@@ -171,6 +174,7 @@ void LED2Change(uint8_t Ledstate)
 		PWM_ConfigOutputChannel(PWM0,greenpin2 , 2400000,g);
 		PWM_ConfigOutputChannel(PWM0,bluepin2 , 2400000,b);
 }
+
 uint8_t rblink=0;
 void blinkred()
 {
