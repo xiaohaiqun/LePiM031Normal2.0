@@ -41,7 +41,6 @@ int32_t main()
 		PowerState=1;
 		while(1)
 		{
-			Button_IRQFlagHandler();
 			
 			Btn9CtlOnOffHandler();
 			

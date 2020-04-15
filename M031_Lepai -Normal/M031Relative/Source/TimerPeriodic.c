@@ -17,7 +17,7 @@ void TIMER_Init(void){
     NVIC_EnableIRQ(TMR0_IRQn);
     TIMER_Start(TIMER0);
 	
-		TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,60);//电量检测时钟
+		TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,2);//电量检测时钟
     TIMER_EnableInt(TIMER1);
     NVIC_EnableIRQ(TMR1_IRQn);
     TIMER_Start(TIMER1);
@@ -52,28 +52,22 @@ void TMR0_IRQHandler(void)    //10ms中断一次
 }
 
 
-extern void Btn9LongPressHandler();
+extern void PoweBtnLongPressHandler();
+extern void RGB_Blink(void);
 uint8_t Timer0Tick=0;
 void Btn9CtlOnOffHandler()
 {
-	/*if(time0Tick > 100)
-	{
-		time0Tick = 0;
-		Btn9LongPressHandler();
-		/////////////////////Blink/////////////
-		if(PB12)
-			LEDBlink();
-	}*/
+	
 	if(timer0flag)
 	{
 		Timer0Tick++;
 		if(Timer0Tick>100)
 		{
 			Timer0Tick=0;
-			Btn9LongPressHandler();
-			if(PB12)
-				LEDBlink();
+			PoweBtnLongPressHandler();
+			LEDBlink();
 		}
+		RGB_Blink();
 		timer0flag=0;
 	}
 }

@@ -49,7 +49,8 @@ void I2C1_Close(void)
 
 
 static uint8_t Order=0;
-uint8_t data[6]={0};
+uint8_t data[9]={0};
+extern uint8_t btnStatus[9];
 static uint8_t powerData[6]={0};
 static uint8_t datapoint=0;
 
@@ -61,7 +62,7 @@ extern uint8_t NineSensorOnOff;
 extern uint8_t i2c0InUseFlag;
 void ReadOrderHandler(uint8_t Order)
 {
-	uint8_t u8data=0;	
+	uint8_t u8data=0,i=0;	
 	switch(Order){
 		case 0x82:
 			I2C_SET_DATA(I2C1, NowBtn);//button read
@@ -88,6 +89,12 @@ void ReadOrderHandler(uint8_t Order)
 			break;
 		case 0x86:                    //Nine Sensor ONOff Read
 			I2C_SET_DATA(I2C1, NineSensorOnOff);
+			break;
+		case 0x87:                   //BtnStatus
+			for(i=0;i<9;i++)
+				data[i]=btnStatus[i];
+			datapoint=0;
+			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8A:                   //Battery Powerdata read  
 			I2C1readPower(data);

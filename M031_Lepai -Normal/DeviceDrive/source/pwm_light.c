@@ -39,7 +39,7 @@ void powerOnLight(){
 	LEDChange(dark);
 	PWM_EnableOutput(PWM0, 0x3F);
 	PWM_Start(PWM0, 0x3F);
-	for(m=0;m<5;m++){
+	for(m=0;m<8;m++){
 		 for(n=0;n<100;n++){
 			RGBConfig( n, 100-n, n);
 			CLK_SysTickDelay(1000000000);
@@ -53,16 +53,19 @@ void powerOnLight(){
 }
 
 
-extern uint8_t time0Tick;
-extern uint8_t LEDOnWork;
-uint8_t blinkOrder=1;
 
-void RGB_Blink()
+int RGBBlinkTimes=0,n=0;
+void RGB_Blink(void)
 {
-	if(!LEDOnWork)
+	if(RGBBlinkTimes>0)
 	{
-		if(blinkOrder)
-			RGBConfig( time0Tick, 100-time0Tick, time0Tick);
+		RGBConfig(n, 100-n, n);
+		n++;
+		if(n==100)
+		{
+			RGBBlinkTimes--;
+			n=0;
+		}
 	}
 }
 
