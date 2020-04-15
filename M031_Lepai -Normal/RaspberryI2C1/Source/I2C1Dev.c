@@ -2,17 +2,6 @@
 #include <stdio.h>
 #include <pwm_light.h>
 
-extern uint8_t NowBtn;
-extern void I2C1readAcc(uint8_t* data);
-extern void I2C1readGyro(uint8_t* data);
-extern void I2C1readMagn(uint8_t* data);
-
-extern void I2C1readPower();
-extern void I2C1readVout1_2_A();
-extern void I2C1readBAT_V_I();
-
-extern void PowerHandler(uint8_t u8data);
-extern void SensoODR_ONOFF_Handler(uint8_t u8data);
 
 void I2C1_GPIO_Init(void)
 {
@@ -47,11 +36,24 @@ void I2C1_Close(void)
     CLK_DisableModuleClock(I2C1_MODULE);
 }
 
+extern uint8_t NowBtn;
+extern void I2C1readAcc(uint8_t* data);
+extern void I2C1readGyro(uint8_t* data);
+extern void I2C1readMagn(uint8_t* data);
+
+extern void I2C1readPower(uint8_t* data);
+extern void I2C1readVout1_2_A(uint8_t* data);
+extern void I2C1readBAT_V_I(uint8_t* data);
+
+extern void PowerHandler(uint8_t u8data);
+extern void SensoODR_ONOFF_Handler(uint8_t u8data);
+
+
 
 static uint8_t Order=0;
 uint8_t data[9]={0};
 extern uint8_t btnStatus[9];
-static uint8_t powerData[6]={0};
+//static uint8_t powerData[6]={0};
 static uint8_t datapoint=0;
 
 /*extern uint8_t AccP,GyroP,MagnP;
@@ -62,7 +64,7 @@ extern uint8_t NineSensorOnOff;
 extern uint8_t i2c0InUseFlag;
 void ReadOrderHandler(uint8_t Order)
 {
-	uint8_t u8data=0,i=0;	
+	uint8_t i=0;	
 	switch(Order){
 		case 0x82:
 			I2C_SET_DATA(I2C1, NowBtn);//button read

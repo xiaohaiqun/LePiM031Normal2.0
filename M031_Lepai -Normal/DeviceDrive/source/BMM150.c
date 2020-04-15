@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "NuMicro.h"
 #include "BMM150.h"
-
+#include <I2C0Dev.h>
 void BMM150_WriteByte(uint8_t LSM6DSL_reg, uint8_t BMM_data)
 {
 	uint8_t temp=0,n=0;
@@ -25,7 +25,7 @@ void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)
 	I2C_ReadMultiBytesOneReg(I2C0,0x10, BMM_reg,data, 6);
 }
 
-#define BMM150_ODR-OPMODE_ADDR 0x4C
+#define BMM150_ODR_OPMODE_ADDR 0x4C
 #define BMM150_ODR_mask     0x38
 #define BMM150_ODR_30HZ 0x38
 #define BMM150_OPMODE_mask  0x06
@@ -33,7 +33,7 @@ void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)
 #define BMM150_OPMODE_ToForceMode   0x02
 #define BMM150_OPMODE_ToSleepMode   0x06
 
-#define BMM150_RESET-POWERMODE_ADDR 0x4B
+#define BMM150_RESET_POWERMODE_ADDR 0x4B
 #define BMM150_POWERMODE_mask 0x01
 #define BMM150_POWERMODE_ToSuspend 0x00
 #define BMM150_POWERMODE_ ToWork   0x01

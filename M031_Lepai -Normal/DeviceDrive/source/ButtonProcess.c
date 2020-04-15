@@ -117,8 +117,8 @@ void Btn9releaseHandler()
 		LEDOnWork=0;
 }
 
-extern uint8_t PowerOn();
-extern uint8_t PowerOff();
+extern uint8_t PowerOn(void);
+extern uint8_t PowerOff(void);
 extern int RGBBlinkTimes;
 void PoweBtnLongPressHandler()
 {

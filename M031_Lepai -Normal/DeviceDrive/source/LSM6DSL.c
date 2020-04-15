@@ -46,9 +46,9 @@ void I2C1readGyro(uint8_t* data){
 	LSM6DSL_Read6Bytes(LSM6DSL_ACC_GYRO_OUTX_L_G,data);  //LoByte is at first.
 }
 
-extern void Init_BMM150();
-extern void BMM150_ToSleepMOde();
-extern void BMM150_ToNormalMode();
+extern void Init_BMM150(void);
+extern void BMM150_ToSleepMOde(void);
+extern void BMM150_ToNormalMode(void);
 
 uint8_t AccOn=1,GyroOn=1,MagnOn=1;
 uint8_t timerPriod=100;

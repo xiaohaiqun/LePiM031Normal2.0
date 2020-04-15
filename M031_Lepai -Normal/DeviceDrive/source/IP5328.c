@@ -25,7 +25,7 @@ uint8_t IP5328_ReadByte(uint8_t IP5328_reg)
 
 uint8_t IP5328_ReadMutiByte(uint8_t IP5328_reg,uint8_t* data,uint8_t len)
 {
-	 I2C_ReadMultiBytesOneReg(I2C0,ip5328_slave_adress,IP5328_reg,data,len);	
+	 return I2C_ReadMultiBytesOneReg(I2C0,ip5328_slave_adress,IP5328_reg,data,len);	
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,20 +67,20 @@ void CloseVout1()
 	state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state&0xFB));
 }
-void OpenVout2()
+void OpenVout2(void)
 {
 	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state|0x30));
 }
-void CloseVout2()
+void CloseVout2(void)
 {
 	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state&0xDF));
 }
 uint8_t powerOnOffFlag=0;
 
-uint8_t PowerOn(){
-	uint8_t m=0,n=0;
+uint8_t PowerOn(void){
+	uint8_t m=0;
 	powerOnOffFlag=1;
 	PB13=1;
 	TIMER_Delay(TIMER1, 100000);

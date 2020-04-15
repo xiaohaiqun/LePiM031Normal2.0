@@ -16,9 +16,9 @@
 #define LedON  6
 #define LedOFF 7
 
-extern void PWM_GPIO_Init();
-extern void powerOnLight();
-extern void powerOffLight();
-extern void Pwm_light_test();
+extern void PWM_GPIO_Init(void);
+extern void powerOnLight(void);
+extern void powerOffLight(void);
+extern void Pwm_light_test(void);
 void LEDChange(uint8_t Ledstate);
 void LED1Change(uint8_t Ledstate);

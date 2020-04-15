@@ -1,13 +1,13 @@
 #include <stdint.h>
 #define ip5328_slave_adress 0x75
 
-extern void IP5328Init();
-extern void IP5328Test();
+extern void IP5328Init(void);
+extern void IP5328Test(void);
 
-extern void I2C1readPower(); 
-extern void I2C1readVout1_2_A();
-extern void I2C1readBAT_V_I();
-extern uint8_t PowerOn();
-extern uint8_t PowerOff();
-extern void OpenVout2();
-extern void CloseVout2();
+extern void I2C1readPower(uint8_t* data); 
+extern void I2C1readVout1_2_A(uint8_t* data);
+extern void I2C1readBAT_V_I(uint8_t* data);
+extern uint8_t PowerOn(void);
+extern uint8_t PowerOff(void);
+extern void OpenVout2(void);
+extern void CloseVout2(void);

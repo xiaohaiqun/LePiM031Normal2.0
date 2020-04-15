@@ -32,17 +32,20 @@ void reset(){
 		
 }
 extern uint8_t PowerState;
-extern void Btn9CtlOnOffHandler();
-extern void BtnLongPressHandler();
 
+extern void BtnLongPressHandler(void);
+
+extern void OneSecRound(void);
+extern void TenMicSecRound(void);
 int32_t main()
 {
 		reset();
 		PowerState=1;
 		while(1)
 		{
+			TenMicSecRound();
 			
-			Btn9CtlOnOffHandler();
+			OneSecRound();
 			
 			BtnLongPressHandler();
 		}

@@ -205,4 +205,5 @@ extern int16_t Read_LSM6DSL_GyroZ(void);
 
 extern uint16_t Read_LSM6DSL_ID(void);
 
-extern void LSM6DSL_test();
+extern void LSM6DSL_test(void);
+

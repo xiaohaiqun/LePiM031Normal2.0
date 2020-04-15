@@ -80,5 +80,5 @@ extern int16_t Read_BMM150_Y(void);
 
 extern int16_t Read_BMM150_Z(void);
 
-extern void	BMM150Test();
+extern void	BMM150Test(void);
 

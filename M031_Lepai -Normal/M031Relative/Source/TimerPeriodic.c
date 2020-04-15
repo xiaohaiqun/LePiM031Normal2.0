@@ -23,7 +23,7 @@ void TIMER_Init(void){
     TIMER_Start(TIMER1);
 }
 
-
+///////////////////////////////////////////
 extern uint8_t LEDOnWork;
 uint8_t LEDBlinkColor=0;
 void LEDBlink()
@@ -35,11 +35,14 @@ void LEDBlink()
 	}
 }
 
+
+////////////////////////////////////////////
 extern uint8_t i2cStartFlag;
 extern uint8_t i2cWaitCount;
-extern void BtnPressTimeCounter();
+extern void BtnPressTimeCounter(void);
+
 uint8_t timer0flag=0;
-uint8_t time0Tick=0;
+
 void TMR0_IRQHandler(void)    //10ms中断一次                
 { 
 	TIMER_ClearIntFlag(TIMER0);
@@ -52,29 +55,42 @@ void TMR0_IRQHandler(void)    //10ms中断一次
 }
 
 
-extern void PoweBtnLongPressHandler();
+extern void PoweBtnLongPressHandler(void);
 extern void RGB_Blink(void);
-uint8_t Timer0Tick=0;
-void Btn9CtlOnOffHandler()
+
+uint8_t time0TickCounter=0;
+uint8_t	OneSecTickFlag=0;
+void OneSecTickGenerator(void)
 {
-	
+	time0TickCounter++;
+	if(time0TickCounter>99)
+	{
+		OneSecTickFlag=1;
+		time0TickCounter=0;
+	}
+}
+
+void OneSecRound(void)
+{
+	if(OneSecTickFlag)
+	{
+		PoweBtnLongPressHandler();
+		LEDBlink();
+		OneSecTickFlag=0;
+	}
+}
+
+void TenMicSecRound(void)
+{
 	if(timer0flag)
 	{
-		Timer0Tick++;
-		if(Timer0Tick>100)
-		{
-			Timer0Tick=0;
-			PoweBtnLongPressHandler();
-			LEDBlink();
-		}
+		OneSecTickGenerator();
 		RGB_Blink();
 		timer0flag=0;
 	}
 }
 
-
-extern void I2C1PowerSpy();
-uint8_t timer1flag=0;
+extern void I2C1PowerSpy(void);
 extern uint8_t i2c1InUseFlag;
 extern uint8_t i2c0InUseFlag;
 void TMR1_IRQHandler(void)                              //used for  9Sensor and powerSpy
