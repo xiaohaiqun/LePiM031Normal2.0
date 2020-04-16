@@ -69,7 +69,7 @@ void OneSecRound(void)
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		//LEDBlink();     //To test M031 still alive!!! 
+		LEDBlink();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;
 	}
 }
