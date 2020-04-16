@@ -60,7 +60,7 @@ uint8_t Btn9timerStart=0;
 
 uint8_t InPowerStarting=0;  //开机过程中标记
 uint8_t InPowerOffFlag=0;  //关机过程中的标记
-uint8_t ShutDownFlag;
+
 
 uint8_t ShutDownTime=0;
 //Button9 按下相关操作
@@ -85,6 +85,7 @@ void Btn9releaseHandler()
 
 
 extern int RGBBlinkTimes;
+bool RaspberryONOFF=0;;   //标记树莓派是否确认关机。
 void PoweBtnLongPressHandler()
 {
 	if(!InPowerStarting)
@@ -118,11 +119,11 @@ void PoweBtnLongPressHandler()
 					//powerOnLight();
 					LEDChange(dark);
 					InPowerStarting=0;
-					ShutDownFlag=0;
+					RaspberryONOFF=0;
 				}		
 			}			
 		}
-		if(ShutDownFlag)
+		if(RaspberryONOFF)
 		{
 			ShutDownTime++;
 			if(ShutDownTime>=10)
@@ -137,7 +138,7 @@ void PoweBtnLongPressHandler()
 					}
 				}
 				ShutDownTime=0;
-				ShutDownFlag=0;
+				RaspberryONOFF=0;
 			}
 		}
 	}
@@ -146,27 +147,29 @@ void PoweBtnLongPressHandler()
 ////////////////////////////////////////////////
 #define LongPressTime 60      //600ms
 uint8_t BtnPressIntFlag=0;    //标记是否有按键按下（方便按键按下计时使用）
+uint8_t btnStatus[9]={0}; //记录所有按键状态，以备树莓派查询。0：弹起，1：按下；
+
 void BtnPressTimeCounter()//放入timer0中断中计时     10ms调用一次。
 {
 	if(BtnPressIntFlag)//按键按下标记
 	{
-		if(!ISButtonPressed.btn1)
+		if(btnStatus[0])
 			(BtnTimer.btn1)++;
-		else if(!ISButtonPressed.btn2)
+		else if(btnStatus[1])
 			(BtnTimer.btn2)++;
-		else if(!ISButtonPressed.btn3)
+		else if(btnStatus[2])
 			(BtnTimer.btn3)++;
-		else if(!ISButtonPressed.btn4)
+		else if(btnStatus[3])
 			(BtnTimer.btn4)++;
-		else if(!ISButtonPressed.btn5)
+		else if(btnStatus[4])
 			(BtnTimer.btn5)++;
-		else if(!ISButtonPressed.btn6)
+		else if(btnStatus[5])
 			(BtnTimer.btn6)++;
-		else if(!ISButtonPressed.btn7)
+		else if(btnStatus[6])
 			(BtnTimer.btn7)++;
-		else if(!ISButtonPressed.btn8)
+		else if(btnStatus[7])
 			(BtnTimer.btn8)++;
-		else if(!ISButtonPressed.btn9)
+		else if(btnStatus[8])
 			(BtnTimer.btn9)++;
 	}
 }
@@ -234,130 +237,37 @@ void BtnLongPressHandler()   //对长按进行处理
 }
 
 ///////////////////////////////////////////////////////////////////////
-uint8_t btnStatus[9]={0}; //记录所有按键状态，以备树莓派查询。0：弹起，1：按下；
+
+
 void GPABIRQ2Flag(void)   //标记哪个按键触发中断，并翻转那个按键的状态。
 { 	
 	volatile uint32_t temp;
 	if(GPIO_GET_INT_FLAG(PB, BIT0)){//btn1
 		GPIO_CLR_INT_FLAG(PB, BIT0);
-		GPIOINTFlag.btn1=1;
-		btnStatus[0]=!btnStatus[0];
-		ISButtonPressed.btn1=PB0;
+		btnStatus[0]=!PB0;
+		if(!PB0)
+		{
+			BtnPressIntFlag=1;
+			NowBtn=0x81; 
+			PB5=!PB5;
+		}
+		else
+		{
+			if(BtnTimer.btn1<LongPressTime)
+			{						
+				NowBtn=0x11;//短按，如果是长按则会在长按操作函数中处理;
+				BtnPressIntFlag=0;
+			}
+			else 
+				NowBtn=0x01;
+			PB5=!PB5;			
+		}
   }			
 	else if(GPIO_GET_INT_FLAG(PB, BIT1)){//btn2
 		GPIO_CLR_INT_FLAG(PB, BIT1);
-		GPIOINTFlag.btn2=1;
-		btnStatus[1]=!btnStatus[1];
-		ISButtonPressed.btn2=PB1;
-  }
-	else if(GPIO_GET_INT_FLAG(PA, BIT12)){//btn6
-		GPIO_CLR_INT_FLAG(PA, BIT12);
-		GPIOINTFlag.btn6=1;
-		btnStatus[5]=!btnStatus[5];
-		ISButtonPressed.btn6=PA12;
-	}
-		
-	else if(GPIO_GET_INT_FLAG(PA, BIT13)){//btn7
-		GPIO_CLR_INT_FLAG(PA, BIT13);
-		GPIOINTFlag.btn7=1;
-		btnStatus[6]=!btnStatus[6];
-		ISButtonPressed.btn7=PA13;
-	}
-	
-	else if(GPIO_GET_INT_FLAG(PA, BIT14)){//btn8
-		GPIO_CLR_INT_FLAG(PA, BIT14);
-		GPIOINTFlag.btn8=1;
-		btnStatus[7]=!btnStatus[7];
-		ISButtonPressed.btn8=PA14;
-	}	
-	
-  else if(GPIO_GET_INT_FLAG(PA, BIT15)){//btn9
-		GPIO_CLR_INT_FLAG(PA, BIT15); 
-		GPIOINTFlag.btn9=1;
-		btnStatus[8]=!btnStatus[8];
-		ISButtonPressed.btn9=PA15;
-	}
-	///////////////generate IRQ to raspberry//////////////////
-	else if(GPIO_GET_INT_FLAG(PB, BIT4)){
-		//printf("raspberry shutdown\n");
-		GPIO_CLR_INT_FLAG(PB, BIT4);
-		GPIOINTFlag.ONOFF=1;
-	}
-	else{
-		/* Un-expected interrupt. Just clear all PB interrupts */
-		temp = PA->INTSRC;
-		PA->INTSRC = temp;
-		
-		temp = PB->INTSRC;
-		PB->INTSRC = temp;
-	}
-}
-void GPCDEFIRQ2Flag()
-{	
-	volatile uint32_t temp;
-	if(GPIO_GET_INT_FLAG(PF, BIT3)){//btn3
-		GPIO_CLR_INT_FLAG(PF, BIT3);
-		GPIOINTFlag.btn3=1;
-		btnStatus[2]=!btnStatus[2];
-		ISButtonPressed.btn3=PF3;
-	}
-	else if(GPIO_GET_INT_FLAG(PF, BIT2)){//btn4
-		GPIO_CLR_INT_FLAG(PF, BIT2);
-		GPIOINTFlag.btn4=1;
-		btnStatus[3]=!btnStatus[3];
-		ISButtonPressed.btn4=PF2;
-	}
-		
-	else if(GPIO_GET_INT_FLAG(PF, BIT15)){//btn5
-		GPIO_CLR_INT_FLAG(PF, BIT15);
-		GPIOINTFlag.btn5=1;
-		btnStatus[4]=!btnStatus[4];
-		ISButtonPressed.btn5=PF15;
-	} 	
-	else{
-		temp = PF->INTSRC;
-		PF->INTSRC = temp;
-	}
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-uint8_t hasBtnINTFlag=0; //标记是否有按键中断
-uint8_t ShutDownFlag=0;   //标记树莓派是否确认关机。
-void Button_IRQFlagHandler(void)
-{ 	
-	if(hasBtnINTFlag)//按键中断标记
-	{
-		if(GPIOINTFlag.btn1)//btn1
-		{
-			GPIOINTFlag.btn1=0;
-			if(!ISButtonPressed.btn1)
+		btnStatus[1]=!PB1;
+		if(!PB1)
 			{
-				BtnTimer.btn1=0;
-				BtnPressIntFlag=1;
-				NowBtn=0x81; 
-				PB5=!PB5;
-			}
-			else
-			{
-				if(BtnTimer.btn1<LongPressTime)
-				{						
-					NowBtn=0x11;//短按，如果是长按则会在长按操作函数中处理;
-					BtnPressIntFlag=0;
-				}
-				else 
-					NowBtn=0x01;
-				PB5=!PB5;			
-				BtnTimer.btn1=0;
-			}
-			//ISButtonPressed.btn1=!ISButtonPressed.btn1;	//将按键的按下与松开判断放人GPIOint中根据相应电平判断，0:按下，1：抬起。	
-		}			
-		else if(GPIOINTFlag.btn2)//btn2
-		{
-			GPIOINTFlag.btn2=0;
-			if(!ISButtonPressed.btn2)
-			{
-				BtnTimer.btn2=0;
 				BtnPressIntFlag=1;
 				NowBtn=0x82;
 				PB5=!PB5;
@@ -372,92 +282,13 @@ void Button_IRQFlagHandler(void)
 				else
 					NowBtn=0x02;
 				PB5=!PB5;
-				BtnTimer.btn2=0;
 			}
-			//ISButtonPressed.btn2=!ISButtonPressed.btn2;
-		}
-		
-		else if(GPIOINTFlag.btn3)//btn3
-		{
-			GPIOINTFlag.btn3=0;
-			if(!ISButtonPressed.btn3)
+  }
+	else if(GPIO_GET_INT_FLAG(PA, BIT12)){//btn6
+		GPIO_CLR_INT_FLAG(PA, BIT12);
+		btnStatus[5]=!PA12;
+			if(!PA12)
 			{
-				BtnTimer.btn3=0;
-				BtnPressIntFlag=1;
-				NowBtn=0x83;
-				PB5=!PB5;
-			}
-			else
-			{
-				if(BtnTimer.btn3<LongPressTime)
-				{						
-					NowBtn=0x13;//短按，如果是长按则会在长按操作函数中处理;
-					BtnPressIntFlag=0;					
-				}
-				else
-					NowBtn=0x03;
-				PB5=!PB5;
-				BtnTimer.btn3=0;
-			}
-			//ISButtonPressed.btn3=!ISButtonPressed.btn3;
-		}
-		
-		else if(GPIOINTFlag.btn4)//btn4
-		{
-			GPIOINTFlag.btn4=0;
-			if(!ISButtonPressed.btn4)
-			{
-				BtnTimer.btn4=0;
-				BtnPressIntFlag=1;
-				NowBtn=0x84;
-				PB5=!PB5;
-			}
-			else
-			{
-				if(BtnTimer.btn4<LongPressTime)
-				{						
-					NowBtn=0x14;//短按，如果是长按则会在长按操作函数中处理;
-					BtnPressIntFlag=0;
-				}
-				else
-					NowBtn=0x04;
-				PB5=!PB5;
-				BtnTimer.btn4=0;
-			}
-			//ISButtonPressed.btn4=!ISButtonPressed.btn4;
-		}
-			
-		else if(GPIOINTFlag.btn5)///btn5
-		{
-			GPIOINTFlag.btn5=0;
-			if(!ISButtonPressed.btn5)
-			{
-				BtnTimer.btn5=0;
-				BtnPressIntFlag=1;
-				NowBtn=0x85;
-				PB5=!PB5;
-			}
-			else
-			{
-				if(BtnTimer.btn5<LongPressTime)
-				{						
-					NowBtn=0x15;//短按，如果是长按则会在长按操作函数中处理;
-					BtnPressIntFlag=0;
-				}
-				else
-					NowBtn=0x05;
-				PB5=!PB5;
-				BtnTimer.btn5=0;
-			}
-			//ISButtonPressed.btn5=!ISButtonPressed.btn5;
-		} 	
-		
-		else if(GPIOINTFlag.btn6)//btn6
-		{
-			GPIOINTFlag.btn6=0;
-			if(!ISButtonPressed.btn6)
-			{
-				BtnTimer.btn6=0;
 				BtnPressIntFlag=1;
 				NowBtn=0x86;
 				PB5=!PB5;
@@ -472,17 +303,14 @@ void Button_IRQFlagHandler(void)
 				else 
 					NowBtn=0x06;
 				PB5=!PB5;
-				BtnTimer.btn6=0;
 			}
-			//ISButtonPressed.btn6=!ISButtonPressed.btn6;
-		}
-			
-		else if(GPIOINTFlag.btn7)//btn7
-		{
-			GPIOINTFlag.btn7=0;
-			if(!ISButtonPressed.btn7)
+	}
+		
+	else if(GPIO_GET_INT_FLAG(PA, BIT13)){//btn7
+		GPIO_CLR_INT_FLAG(PA, BIT13);
+		btnStatus[6]=!PA13;
+		if(!PA13)
 			{
-				BtnTimer.btn7=0;
 				BtnPressIntFlag=1;
 				NowBtn=0x87;
 				PB5=!PB5;
@@ -497,17 +325,14 @@ void Button_IRQFlagHandler(void)
 				else
 					NowBtn=0x07;
 				PB5=!PB5;
-				BtnTimer.btn7=0;
 			}
-			//ISButtonPressed.btn7=!ISButtonPressed.btn7;
-		}
-		
-		else if(GPIOINTFlag.btn8)//btn8
-		{
-			GPIOINTFlag.btn8=0;
-			if(!ISButtonPressed.btn8)
+	}
+	
+	else if(GPIO_GET_INT_FLAG(PA, BIT14)){//btn8
+		GPIO_CLR_INT_FLAG(PA, BIT14);
+		btnStatus[7]=!PA14;
+		if(!PA14)
 			{
-				BtnTimer.btn8=0;
 				BtnPressIntFlag=1;
 				NowBtn=0x88;
 				PB5=!PB5;
@@ -522,17 +347,14 @@ void Button_IRQFlagHandler(void)
 				else
 					NowBtn=0x08;
 				PB5=!PB5;
-				BtnTimer.btn8=0;
 			}
-			//ISButtonPressed.btn8=!ISButtonPressed.btn8;
-		}	
-		
-		else if(GPIOINTFlag.btn9)
-		{
-			GPIOINTFlag.btn9=0;
-			if(!ISButtonPressed.btn9)
-				{//开关机键按下	
-					BtnTimer.btn9=0;
+	}	
+	
+  else if(GPIO_GET_INT_FLAG(PA, BIT15)){//btn9
+		GPIO_CLR_INT_FLAG(PA, BIT15); 
+		btnStatus[8]=!PA15;
+			if(!PA15)
+				{//开关机键按下	 
 					BtnPressIntFlag=1;	
 					NowBtn=0x89;
 					PB5=!PB5;
@@ -548,49 +370,111 @@ void Button_IRQFlagHandler(void)
 					else
 						NowBtn=0x09;
 					PB5=!PB5;
-					BtnTimer.btn9=0;
 					Btn9releaseHandler();
 				}
-				//ISButtonPressed.btn9=!ISButtonPressed.btn9;
-		}
-		///////////////generate IRQ to raspberry//////////////////
-		if(GPIOINTFlag.ONOFF){
-			//printf("raspberry shutdown\n");
-			GPIOINTFlag.ONOFF=0;
-			ShutDownFlag=1;    //标记树莓派（PB4)出现了上拉电平(关机信号)
-		}
-		hasBtnINTFlag=0;
 	}
+	///////////////generate IRQ to raspberry//////////////////
+	else if(GPIO_GET_INT_FLAG(PB, BIT4)){
+		//printf("raspberry shutdown\n");
+		GPIO_CLR_INT_FLAG(PB, BIT4);
+		RaspberryONOFF=1;
+	}
+	else{
+		/* Un-expected interrupt. Just clear all PB interrupts */
+		temp = PA->INTSRC;
+		PA->INTSRC = temp;		
+		temp = PB->INTSRC;
+		PB->INTSRC = temp;
+	}
+	BtnTimer.btn1=0;BtnTimer.btn2=0;BtnTimer.btn3=0;
+	BtnTimer.btn4=0;BtnTimer.btn5=0;BtnTimer.btn6=0;
+	BtnTimer.btn7=0;BtnTimer.btn8=0;BtnTimer.btn9=0;
 }
+void GPCDEFIRQ2Flag()
+{	
+	volatile uint32_t temp;
+	if(GPIO_GET_INT_FLAG(PF, BIT3)){//btn3
+		GPIO_CLR_INT_FLAG(PF, BIT3);
+		btnStatus[2]=!PF3;
+			if(!PF3)
+			{
+				BtnPressIntFlag=1;
+				NowBtn=0x83;
+				PB5=!PB5;
+			}
+			else
+			{
+				if(BtnTimer.btn3<LongPressTime)
+				{						
+					NowBtn=0x13;//短按，如果是长按则会在长按操作函数中处理;
+					BtnPressIntFlag=0;					
+				}
+				else
+					NowBtn=0x03;
+				PB5=!PB5;
+			}
+	}
+	else if(GPIO_GET_INT_FLAG(PF, BIT2)){//btn4
+		GPIO_CLR_INT_FLAG(PF, BIT2);
+		btnStatus[3]=!PF2;
+			if(!PF2)
+			{
+				BtnPressIntFlag=1;
+				NowBtn=0x84;
+				PB5=!PB5;
+			}
+			else
+			{
+				if(BtnTimer.btn4<LongPressTime)
+				{						
+					NowBtn=0x14;//短按，如果是长按则会在长按操作函数中处理;
+					BtnPressIntFlag=0;
+				}
+				else
+					NowBtn=0x04;
+				PB5=!PB5;
+			}
+	}
+		
+	else if(GPIO_GET_INT_FLAG(PF, BIT15)){//btn5
+		GPIO_CLR_INT_FLAG(PF, BIT15);
+		btnStatus[4]=!PF15;
+		if(!PF15)
+			{
+				BtnPressIntFlag=1;
+				NowBtn=0x85;
+				PB5=!PB5;
+			}
+			else
+			{
+				if(BtnTimer.btn5<LongPressTime)
+				{						
+					NowBtn=0x15;//短按，如果是长按则会在长按操作函数中处理;
+					BtnPressIntFlag=0;
+				}
+				else
+					NowBtn=0x05;
+				PB5=!PB5;
+			}
+	} 	
+	else{
+		temp = PF->INTSRC;
+		PF->INTSRC = temp;
+	}
+	BtnTimer.btn1=0;BtnTimer.btn2=0;BtnTimer.btn3=0;
+	BtnTimer.btn4=0;BtnTimer.btn5=0;BtnTimer.btn6=0;
+	BtnTimer.btn7=0;BtnTimer.btn8=0;BtnTimer.btn9=0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+
 ///////////////////////////////////////////////////////////////////////////
 //为了及时响应，将按键的短按处理放在GPIO中断
 void GPAB_IRQHandler(void){
 	GPABIRQ2Flag();
-	if(!InPowerStarting) //当处于开关机过程时放弃处理按键事件
-	{
-		hasBtnINTFlag=1;
-		Button_IRQFlagHandler();
-	}
-	else
-	{
-		GPIOINTFlag.btn1=0;GPIOINTFlag.btn2=0;GPIOINTFlag.btn3=0;
-		GPIOINTFlag.btn4=0;GPIOINTFlag.btn5=0;GPIOINTFlag.btn6=0;
-		GPIOINTFlag.btn7=0;GPIOINTFlag.btn8=0;GPIOINTFlag.btn9=0;
-		GPIOINTFlag.ONOFF=0;
-	}
+	
 }
 void GPCDEF_IRQHandler(void){
 	GPCDEFIRQ2Flag();
-	if(!InPowerStarting) ////当处于开关机过程时放弃处理按键事件
-	{
-		hasBtnINTFlag=1;
-		Button_IRQFlagHandler();
-	}
-	else
-	{
-		GPIOINTFlag.btn1=0;GPIOINTFlag.btn2=0;GPIOINTFlag.btn3=0;
-		GPIOINTFlag.btn4=0;GPIOINTFlag.btn5=0;GPIOINTFlag.btn6=0;
-		GPIOINTFlag.btn7=0;GPIOINTFlag.btn8=0;GPIOINTFlag.btn9=0;
-		GPIOINTFlag.ONOFF=0;
-	}
 }
