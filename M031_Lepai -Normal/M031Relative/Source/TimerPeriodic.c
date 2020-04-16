@@ -28,7 +28,7 @@ extern uint8_t LEDOnWork;
 uint8_t LEDBlinkColor=0;
 void LEDBlink()
 {	
-	if(!LEDOnWork)
+	//if(!LEDOnWork)
 	{
 		LEDBlinkColor=!LEDBlinkColor;
 		LEDChange(LEDBlinkColor);
@@ -69,7 +69,7 @@ void OneSecRound(void)
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		LEDBlink();     //To test M031 still alive!!! 
+		//LEDBlink();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;
 	}
 }
