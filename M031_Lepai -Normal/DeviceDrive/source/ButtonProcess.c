@@ -92,7 +92,7 @@ void PoweBtnLongPressHandler()
 		if(Btn9timerStart)
 		{
 			PowerBtnPressTime++;// +1s
-			if(PowerBtnPressTime>=5)
+			if(PowerBtnPressTime==5)
 			{//长按关机
 				InPowerOffFlag=1; //关机中标记
 				Btn9timerStart=0;
@@ -100,7 +100,7 @@ void PoweBtnLongPressHandler()
 				PowerOff();     
 				InPowerOffFlag=0;
 			}
-			else if(PowerBtnPressTime>=2)
+			else if(PowerBtnPressTime==2)//>=2会发送发送3遍
 			{
 				if(PowerState==1){//软关机			
 					NowBtn=0xA9;
@@ -150,23 +150,23 @@ void BtnPressTimeCounter()//放入timer0中断中计时     10ms调用一次。
 {
 	if(BtnPressIntFlag)//按键按下标记
 	{
-		if(ISButtonPressed.btn1)
+		if(!ISButtonPressed.btn1)
 			(BtnTimer.btn1)++;
-		else if(ISButtonPressed.btn2)
+		else if(!ISButtonPressed.btn2)
 			(BtnTimer.btn2)++;
-		else if(ISButtonPressed.btn3)
+		else if(!ISButtonPressed.btn3)
 			(BtnTimer.btn3)++;
-		else if(ISButtonPressed.btn4)
+		else if(!ISButtonPressed.btn4)
 			(BtnTimer.btn4)++;
-		else if(ISButtonPressed.btn5)
+		else if(!ISButtonPressed.btn5)
 			(BtnTimer.btn5)++;
-		else if(ISButtonPressed.btn6)
+		else if(!ISButtonPressed.btn6)
 			(BtnTimer.btn6)++;
-		else if(ISButtonPressed.btn7)
+		else if(!ISButtonPressed.btn7)
 			(BtnTimer.btn7)++;
-		else if(ISButtonPressed.btn8)
+		else if(!ISButtonPressed.btn8)
 			(BtnTimer.btn8)++;
-		else if(ISButtonPressed.btn9)
+		else if(!ISButtonPressed.btn9)
 			(BtnTimer.btn9)++;
 	}
 }
@@ -242,34 +242,40 @@ void GPABIRQ2Flag(void)   //标记哪个按键触发中断，并翻转那个按�
 		GPIO_CLR_INT_FLAG(PB, BIT0);
 		GPIOINTFlag.btn1=1;
 		btnStatus[0]=!btnStatus[0];
+		ISButtonPressed.btn1=PB0;
   }			
 	else if(GPIO_GET_INT_FLAG(PB, BIT1)){//btn2
 		GPIO_CLR_INT_FLAG(PB, BIT1);
 		GPIOINTFlag.btn2=1;
 		btnStatus[1]=!btnStatus[1];
+		ISButtonPressed.btn2=PB1;
   }
 	else if(GPIO_GET_INT_FLAG(PA, BIT12)){//btn6
 		GPIO_CLR_INT_FLAG(PA, BIT12);
 		GPIOINTFlag.btn6=1;
 		btnStatus[5]=!btnStatus[5];
+		ISButtonPressed.btn6=PA12;
 	}
 		
 	else if(GPIO_GET_INT_FLAG(PA, BIT13)){//btn7
 		GPIO_CLR_INT_FLAG(PA, BIT13);
 		GPIOINTFlag.btn7=1;
 		btnStatus[6]=!btnStatus[6];
+		ISButtonPressed.btn7=PA13;
 	}
 	
 	else if(GPIO_GET_INT_FLAG(PA, BIT14)){//btn8
 		GPIO_CLR_INT_FLAG(PA, BIT14);
 		GPIOINTFlag.btn8=1;
 		btnStatus[7]=!btnStatus[7];
+		ISButtonPressed.btn8=PA14;
 	}	
 	
-  else if(GPIO_GET_INT_FLAG(PA, BIT15)){
+  else if(GPIO_GET_INT_FLAG(PA, BIT15)){//btn9
 		GPIO_CLR_INT_FLAG(PA, BIT15); 
 		GPIOINTFlag.btn9=1;
 		btnStatus[8]=!btnStatus[8];
+		ISButtonPressed.btn9=PA15;
 	}
 	///////////////generate IRQ to raspberry//////////////////
 	else if(GPIO_GET_INT_FLAG(PB, BIT4)){
@@ -293,17 +299,20 @@ void GPCDEFIRQ2Flag()
 		GPIO_CLR_INT_FLAG(PF, BIT3);
 		GPIOINTFlag.btn3=1;
 		btnStatus[2]=!btnStatus[2];
+		ISButtonPressed.btn3=PF3;
 	}
 	else if(GPIO_GET_INT_FLAG(PF, BIT2)){//btn4
 		GPIO_CLR_INT_FLAG(PF, BIT2);
 		GPIOINTFlag.btn4=1;
 		btnStatus[3]=!btnStatus[3];
+		ISButtonPressed.btn4=PF2;
 	}
 		
 	else if(GPIO_GET_INT_FLAG(PF, BIT15)){//btn5
 		GPIO_CLR_INT_FLAG(PF, BIT15);
 		GPIOINTFlag.btn5=1;
 		btnStatus[4]=!btnStatus[4];
+		ISButtonPressed.btn5=PF15;
 	} 	
 	else{
 		temp = PF->INTSRC;
@@ -341,7 +350,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;			
 				BtnTimer.btn1=0;
 			}
-			ISButtonPressed.btn1=!ISButtonPressed.btn1;		
+			//ISButtonPressed.btn1=!ISButtonPressed.btn1;	//将按键的按下与松开判断放人GPIOint中根据相应电平判断，0:按下，1：抬起。	
 		}			
 		else if(GPIOINTFlag.btn2)//btn2
 		{
@@ -365,7 +374,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn2=0;
 			}
-			ISButtonPressed.btn2=!ISButtonPressed.btn2;
+			//ISButtonPressed.btn2=!ISButtonPressed.btn2;
 		}
 		
 		else if(GPIOINTFlag.btn3)//btn3
@@ -390,7 +399,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn3=0;
 			}
-			ISButtonPressed.btn3=!ISButtonPressed.btn3;
+			//ISButtonPressed.btn3=!ISButtonPressed.btn3;
 		}
 		
 		else if(GPIOINTFlag.btn4)//btn4
@@ -415,7 +424,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn4=0;
 			}
-			ISButtonPressed.btn4=!ISButtonPressed.btn4;
+			//ISButtonPressed.btn4=!ISButtonPressed.btn4;
 		}
 			
 		else if(GPIOINTFlag.btn5)///btn5
@@ -440,7 +449,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn5=0;
 			}
-			ISButtonPressed.btn5=!ISButtonPressed.btn5;
+			//ISButtonPressed.btn5=!ISButtonPressed.btn5;
 		} 	
 		
 		else if(GPIOINTFlag.btn6)//btn6
@@ -465,7 +474,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn6=0;
 			}
-			ISButtonPressed.btn6=!ISButtonPressed.btn6;
+			//ISButtonPressed.btn6=!ISButtonPressed.btn6;
 		}
 			
 		else if(GPIOINTFlag.btn7)//btn7
@@ -490,7 +499,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn7=0;
 			}
-			ISButtonPressed.btn7=!ISButtonPressed.btn7;
+			//ISButtonPressed.btn7=!ISButtonPressed.btn7;
 		}
 		
 		else if(GPIOINTFlag.btn8)//btn8
@@ -515,7 +524,7 @@ void Button_IRQFlagHandler(void)
 				PB5=!PB5;
 				BtnTimer.btn8=0;
 			}
-			ISButtonPressed.btn8=!ISButtonPressed.btn8;
+			//ISButtonPressed.btn8=!ISButtonPressed.btn8;
 		}	
 		
 		else if(GPIOINTFlag.btn9)
@@ -542,7 +551,7 @@ void Button_IRQFlagHandler(void)
 					BtnTimer.btn9=0;
 					Btn9releaseHandler();
 				}
-				ISButtonPressed.btn9=!ISButtonPressed.btn9;
+				//ISButtonPressed.btn9=!ISButtonPressed.btn9;
 		}
 		///////////////generate IRQ to raspberry//////////////////
 		if(GPIOINTFlag.ONOFF){
