@@ -5,34 +5,9 @@ extern uint8_t PowerOn(void);
 extern uint8_t PowerOff(void);
 #ifndef BUTTONPROCESS_H
 #define BUTTONPROCESS_H
-
  
+
  void Button_GPIO_Init(void);
- static struct{
-  bool btn1;
-	bool btn2;
-	bool btn3;
-	bool btn4;
-	bool btn5;
-	bool btn6;
-	bool btn7;
-	bool btn8;
-	bool btn9;
-}ISButtonPressed={0,0,0,0,0,0,0,0,0};
-
- static struct{
-  bool btn1;
-	bool btn2;
-	bool btn3;
-	bool btn4;
-	bool btn5;
-	bool btn6;
-	bool btn7;
-	bool btn8;
-	bool btn9;
-	bool ONOFF;
-}GPIOINTFlag={0,0,0,0,0,0,0,0,0,0};
-
 
 static struct {
 	uint8_t btn1;
