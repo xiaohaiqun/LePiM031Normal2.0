@@ -558,12 +558,30 @@ void Button_IRQFlagHandler(void)
 void GPAB_IRQHandler(void){
 	GPABIRQ2Flag();
 	if(!InPowerStarting) //当处于开关机过程时放弃处理按键事件
+	{
 		hasBtnINTFlag=1;
-	Button_IRQFlagHandler();
+		Button_IRQFlagHandler();
+	}
+	else
+	{
+		GPIOINTFlag.btn1=0;GPIOINTFlag.btn2=0;GPIOINTFlag.btn3=0;
+		GPIOINTFlag.btn4=0;GPIOINTFlag.btn5=0;GPIOINTFlag.btn6=0;
+		GPIOINTFlag.btn7=0;GPIOINTFlag.btn8=0;GPIOINTFlag.btn9=0;
+		GPIOINTFlag.ONOFF=0;
+	}
 }
 void GPCDEF_IRQHandler(void){
 	GPCDEFIRQ2Flag();
 	if(!InPowerStarting) ////当处于开关机过程时放弃处理按键事件
+	{
 		hasBtnINTFlag=1;
-	Button_IRQFlagHandler();
+		Button_IRQFlagHandler();
+	}
+	else
+	{
+		GPIOINTFlag.btn1=0;GPIOINTFlag.btn2=0;GPIOINTFlag.btn3=0;
+		GPIOINTFlag.btn4=0;GPIOINTFlag.btn5=0;GPIOINTFlag.btn6=0;
+		GPIOINTFlag.btn7=0;GPIOINTFlag.btn8=0;GPIOINTFlag.btn9=0;
+		GPIOINTFlag.ONOFF=0;
+	}
 }
