@@ -477,6 +477,11 @@
               <FileType>1</FileType>
               <FilePath>..\RaspberryI2C1\Source\I2C1Dev.c</FilePath>
             </File>
+            <File>
+              <FileName>I2C1Dev.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\RaspberryI2C1\Include\I2C1Dev.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -496,6 +501,11 @@
               <FileName>TimerPeriodic.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\M031Relative\Source\TimerPeriodic.c</FilePath>
+            </File>
+            <File>
+              <FileName>I2C0Dev.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\M031Relative\Include\I2C0Dev.h</FilePath>
             </File>
           </Files>
         </Group>
