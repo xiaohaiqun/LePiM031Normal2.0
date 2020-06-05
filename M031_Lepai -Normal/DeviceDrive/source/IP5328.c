@@ -4,28 +4,21 @@
 #include <pwm_light.h>
 #include "I2C0Dev.h"
 uint8_t PowerState=1;
-
+extern uint8_t i2c0InUseFlag;
 /////////////ip5328  i2c 读写函数封装////////////////////////////////
 uint8_t IP5328_WriteByte(uint8_t IP5328_reg, uint8_t IP5328_data)
 {
 	return I2C_WriteByteOneReg(I2C0,ip5328_slave_adress, IP5328_reg, IP5328_data);
 }
-extern uint8_t i2c0InUseFlag;
+
 uint8_t IP5328_ReadByte(uint8_t IP5328_reg)
 {
-	 uint8_t reData=0;
-	 if(!i2c0InUseFlag)
-	 {
-		 i2c0InUseFlag=1;
-		 reData=I2C_ReadByteOneReg(I2C0,ip5328_slave_adress,IP5328_reg);
-		 i2c0InUseFlag=0;
-	 }
-	 return reData;
+	 return I2C_ReadByteOneReg(I2C0,ip5328_slave_adress,IP5328_reg);
 }
 
 uint8_t IP5328_ReadMutiByte(uint8_t IP5328_reg,uint8_t* data,uint8_t len)
 {
-	 return I2C_ReadMultiByte(ip5328_slave_adress,IP5328_reg,data,len);	
+	return I2C_ReadMultiByte(ip5328_slave_adress,IP5328_reg,data,len);	
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -199,7 +192,6 @@ extern uint8_t NowBtn;
 uint16_t BATpower=0;
 uint8_t ChargeInfo=0;
 
-
 extern uint8_t data[6];
 void I2C1PowerSpy()
 {
@@ -210,13 +202,12 @@ void I2C1PowerSpy()
 	{
 		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
 		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
-		BATpower_Temp=BATpower_Temp;
 		ChargeInfo_Temp=IP5328_ReadByte(0xD7);               //充电状态	
-		if((BATpower!=BATpower_Temp)||(ChargeInfo!=ChargeInfo_Temp))
+		//if((BATpower!=BATpower_Temp)||(ChargeInfo!=ChargeInfo_Temp))
 		{
 			BATpower=BATpower_Temp;
-			temp=(BATpower_Temp-2000)/40.0;
-			if((BATpowerNum-temp)*(BATpowerNum-temp)<25)
+			temp=(BATpower_Temp-2800)/32.0;
+			//if((BATpowerNum-temp)*(BATpowerNum-temp)<100)
 				BATpowerNum=temp;
 			NowBtn=0x55;                                        //电池电量变化
 			
@@ -241,10 +232,80 @@ void I2C1PowerSpy()
 		}
 	}
 }
-
-void I2C1readPower(uint8_t* data)          //读取电池电量估计以及充电状态信息，两个字节
+extern void RGBConfig(uint8_t r,uint8_t g,uint8_t b);
+extern uint8_t LEDOnWork;
+uint8_t InChargeFlag=0;
+uint8_t chargeLed=0;
+uint8_t lowPowerLed=0;
+uint16_t lowPowerShutDownTimer=0;
+void ChargeAndLowPowerLedDisplay(void)
 {
-	data[0]=BATpowerNum;                            //灯显模式计算的电量
+	if(IP5328_ReadByte(0xD7)&0xF0)//在充电
+	{
+		lowPowerShutDownTimer=0;
+		InChargeFlag=1;
+		if(chargeLed==1)
+			RGBConfig(0,0,0);
+		else if(chargeLed==2)
+			RGBConfig(0,33,0);
+		else if(chargeLed==3)
+			RGBConfig(0,66,0);
+		else if(chargeLed==4)
+		{
+			RGBConfig(0,100,0);
+			chargeLed=0;
+		}
+		chargeLed++;		
+	}
+	else //不在充电
+	{
+		if(InChargeFlag)
+		{
+			InChargeFlag=0;
+			if(!LEDOnWork)
+				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
+		}
+		if((BATpowerNum<=5) && (PowerState==1))//低电量(低于百分之五)处理
+		{
+			lowPowerShutDownTimer++;
+			if(lowPowerShutDownTimer<30)//低电提示30秒
+			{
+				if(lowPowerLed)
+				{
+					lowPowerLed=0;
+					RGBConfig(0,0,0);
+				}
+				else
+				{
+					lowPowerLed=1;
+					RGBConfig(60,0,0);
+				}
+			}
+			else            //提示三十秒后强制关机
+			{
+				PowerOff();
+				lowPowerShutDownTimer=0;
+				RGBConfig(0,0,0);
+			}
+		}
+		else
+		{
+			lowPowerShutDownTimer=0;
+		}
+	}
+}
+uint8_t lowPowerDetect()
+{
+	return BATpowerNum<=10;
+}
+
+void I2C1readPower(uint8_t* data)              //读取电池电量估计以及充电状态信息，两个字节
+{
+	uint16_t BATpower_Temp;
+	BATpower_Temp=(IP5328_ReadByte(0x7B));       //电池开路电压,计算电量 
+	BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+	BATpowerNum=(BATpower_Temp-2800)/32.0;
+	data[0]=BATpowerNum;                         //灯显模式计算的电量
 	data[1]=IP5328_ReadByte(0xD7);               //充电状态	
 	IP5328_ReadMutiByte(BATOCV_DAT_L,data+2,2);  //开路电压读取，用于进一步估算电池电量
 }

@@ -6,9 +6,9 @@ void TIMER_GPIO_Init()
 {
 	/* Enable TIMER module clock */
 	CLK_EnableModuleClock(TMR0_MODULE);
-	CLK_EnableModuleClock(TMR1_MODULE);
+	//CLK_EnableModuleClock(TMR1_MODULE);
 	CLK_SetModuleClock(TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0);
-	CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
+	//CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
 }
 
 void TIMER_Init(void){
@@ -17,16 +17,16 @@ void TIMER_Init(void){
     NVIC_EnableIRQ(TMR0_IRQn);
     TIMER_Start(TIMER0);
 	
-		TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,2);//电量检测时钟
-    TIMER_EnableInt(TIMER1);
-    NVIC_EnableIRQ(TMR1_IRQn);
-    TIMER_Start(TIMER1);
+		//TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,2);//电量检测时钟
+    //TIMER_EnableInt(TIMER1);
+    //NVIC_EnableIRQ(TMR1_IRQn);
+    //TIMER_Start(TIMER1);
 }
 
 ///////////////////////////////////////////
 extern uint8_t LEDOnWork;
 uint8_t LEDBlinkColor=0;
-void LEDBlink()
+void LEDBlinkTest()
 {	
 	//if(!LEDOnWork)
 	{
@@ -34,7 +34,23 @@ void LEDBlink()
 		LEDChange(LEDBlinkColor);
 	}
 }
-
+///////////////////////////////////////////
+static uint8_t redBlinkTimes=0;
+void redLedBlinkTimers(uint8_t times)
+{
+	redBlinkTimes=2*times;
+}
+extern void blinkred(void);
+void redBlink()
+{
+	if(redBlinkTimes>0)
+	{
+		blinkred();
+		redBlinkTimes--;
+		if(redBlinkTimes==0)
+			LEDChange( 0 );
+	}
+}
 
 ////////////////////////////////////////////
 extern void BtnPressTimeCounter(void);
@@ -61,16 +77,21 @@ void OneSecTickGenerator(void)
 	{
 		OneSecTickFlag=1;
 		time0TickCounter=0;
+		
 	}
 }
-
+extern void ChargeAndLowPowerLedDisplay(void);
+extern void I2C1PowerSpy(void);
 void OneSecRound(void)
 {
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		//LEDBlink();     //To test M031 still alive!!! 
+		//LEDBlinkTest();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;
+		I2C1PowerSpy();
+		ChargeAndLowPowerLedDisplay();
+		redBlink();
 	}
 }
 
@@ -85,19 +106,22 @@ void TenMicSecRound(void)
 	}
 }
 
-extern void I2C1PowerSpy(void);
+
+/*不使用timer1，所有时钟信息由timer0产生，减少中断。
 extern uint8_t i2c1InUseFlag;
 extern uint8_t i2c0InUseFlag;
+//extern void ChargeAndLowPowerLedDisplay(void);
 void TMR1_IRQHandler(void)                              //used for  9Sensor and powerSpy
 {
 		if(TIMER_GetIntFlag(TIMER1) == 1)
     {
       //Clear Timer1 time-out interrupt flag
       TIMER_ClearIntFlag(TIMER1);
-			if(!i2c1InUseFlag&&(!i2c0InUseFlag))
+			if(!i2c1InUseFlag)
 			{	
-				I2C1PowerSpy();
+				//I2C1PowerSpy();
+				//ChargeAndLowPowerLedDisplay();
 			}
     }
 }
-
+*/

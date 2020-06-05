@@ -1,5 +1,5 @@
 #include "I2C0Dev.h"
-uint8_t i2c0InUseFlag=0;
+
 void I2C0_GPIO_Init(){
 	CLK_EnableModuleClock(I2C0_MODULE);
 	SYS->GPC_MFPL = (SYS->GPC_MFPL & ~(SYS_GPC_MFPL_PC0MFP_Msk | SYS_GPC_MFPL_PC1MFP_Msk)) |
@@ -15,6 +15,12 @@ void I2C0_Init(void)
 		//I2C_DisableTimeout(I2C0);
     NVIC_DisableIRQ(I2C0_IRQn);	
 }
+
+/************************************************************************
+***将对i2c0的访问封装成以下三个函数，提供给九轴和电源芯片使用，**********
+***使用i2c0InUseFlag对其加锁，防止访问冲突。****************************/
+
+uint8_t i2c0InUseFlag=0;
 
 uint8_t I2C_Write(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t data)
 {
@@ -63,3 +69,4 @@ uint32_t I2C_ReadMultiByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t rdat
 	}
 	return 0;
 }
+/*************************************************************************************/

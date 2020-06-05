@@ -37,6 +37,7 @@ extern void BtnLongPressHandler(void);
 
 extern void OneSecRound(void);
 extern void TenMicSecRound(void);
+extern void I2C_SlaveTxRxHandler(void);
 int32_t main()
 {
 		reset();
@@ -48,5 +49,7 @@ int32_t main()
 			OneSecRound();
 			
 			BtnLongPressHandler();
+			
+			I2C_SlaveTxRxHandler();
 		}
 }

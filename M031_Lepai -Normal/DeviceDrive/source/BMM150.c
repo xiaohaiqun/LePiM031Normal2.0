@@ -3,6 +3,7 @@
 #include "NuMicro.h"
 #include "BMM150.h"
 #include <I2C0Dev.h>
+
 void BMM150_WriteByte(uint8_t LSM6DSL_reg, uint8_t BMM_data)
 {
 		I2C_Write(0x10 ,  LSM6DSL_reg, BMM_data);

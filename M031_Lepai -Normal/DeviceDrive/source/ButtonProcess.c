@@ -86,6 +86,8 @@ void Btn9releaseHandler()
 
 extern int RGBBlinkTimes;
 bool RaspberryONOFF=0;;   //标记树莓派是否确认关机。
+extern uint8_t lowPowerDetect(void);
+extern void redLedBlinkTimers(uint8_t);
 void PoweBtnLongPressHandler()
 {
 	if(!InPowerStarting)
@@ -114,9 +116,17 @@ void PoweBtnLongPressHandler()
 					Btn9timerStart=0;
 					PowerBtnPressTime=0;
 					LEDChange(green);
-					PowerOn();
-					RGBBlinkTimes=10;
-					//powerOnLight();
+					if( lowPowerDetect() )	//如果低电，不能开机，闪红灯提示。
+					{
+						redLedBlinkTimers(5);
+
+					}
+					else                   //如果电量充足，执行开机
+					{
+						PowerOn();
+						RGBBlinkTimes=10;
+					}
+						//powerOnLight();
 					LEDChange(dark);
 					InPowerStarting=0;
 					RaspberryONOFF=0;
