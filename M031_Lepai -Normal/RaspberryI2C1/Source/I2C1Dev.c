@@ -14,12 +14,12 @@ void I2C1_Init(void)
     /* Get I2C1 Bus Clock */
     /* Set I2C Slave Addresses */
     I2C_SetSlaveAddr(I2C1, 0, 0x15, 0);   /* Slave Address : 0x15 */
-		I2C_EnableInt(I2C1);
-    NVIC_EnableIRQ(I2C1_IRQn);	
+		//I2C_EnableInt(I2C1);
+    //NVIC_EnableIRQ(I2C1_IRQn);	
 		//I2C_EnableWakeup  ( I2C1 );
 		/* I2C enter no address SLV mode */
     I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
-		I2C_EnableTimeout(I2C1,1);
+		//I2C_EnableTimeout(I2C1,1);
 }
 
 
@@ -121,6 +121,8 @@ void WriteOrderHandler(uint8_t Order,uint8_t u8data)
 }
 
 uint8_t i2c1InUseFlag=0;
+
+
 void I2C_SlaveTxRxHandler()
 {
 	uint8_t u8data;
@@ -128,16 +130,15 @@ void I2C_SlaveTxRxHandler()
 	I2C1Status=I2C_GET_STATUS(I2C1);
 	switch(I2C1Status)
 	{
-		case 0x60:		 /* Own SLA+W has been receive; ACK has been return */
-		case 0xC0:		 /* Data byte or last data in I2CDAT has been transmitted Not ACK has been received */
-		case 0x88:		 /* Previously addressed with own SLA address; NOT ACK has been returned */
+		case 0x60:		 // Own SLA+W has been receive; ACK has been return 
+		case 0xC0:		 // Data byte or last data in I2CDAT has been transmitted Not ACK has been received 
+		case 0x88:		 // Previously addressed with own SLA address; NOT ACK has been returned 
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 			break;
-		case 0xA0:    /* A STOP or repeated START has been received while still addressed as Slave/Receiver*/
+		case 0xA0:    // A STOP or repeated START has been received while still addressed as Slave/Receiver
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
-			i2c1InUseFlag=0;
 			break;
-		case 0x80:		 /* Previously address with own SLA address Data has been received; ACK has been returned*/
+		case 0x80:		 //Previously address with own SLA address Data has been received; ACK has been returned
 			u8data = (unsigned char) I2C_GET_DATA(I2C1);
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 			if((Order&0xC0)==0x40)
@@ -150,7 +151,7 @@ void I2C_SlaveTxRxHandler()
 				Order=u8data;
 			}
 			break;		
-		case 0xA8:		 /* Own SLA+R has been receive; ACK has been return */
+		case 0xA8:		 // Own SLA+R has been receive; ACK has been return 
 			if((Order&0xC0)==0x80)
 			{
 				ReadOrderHandler(Order);
@@ -161,7 +162,7 @@ void I2C_SlaveTxRxHandler()
 			}
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 			break;
-		case 0xB8:		 /* Data byte in I2CDAT has been transmitted ACK has been received */
+		case 0xB8:		 // Data byte in I2CDAT has been transmitted ACK has been received 
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 			break;		
@@ -170,7 +171,10 @@ void I2C_SlaveTxRxHandler()
 	}
 }
 
-void I2C1_IRQHandler(void)
+
+
+
+/*void I2C1_IRQHandler(void)
 {
 	 if(I2C_GET_TIMEOUT_FLAG(I2C1))
 	 {
@@ -181,5 +185,6 @@ void I2C1_IRQHandler(void)
 	 {
 		i2c1InUseFlag=1;
 		I2C_SlaveTxRxHandler();
+		i2c1InUseFlag=0;		
 	 }
-}
+}*/
