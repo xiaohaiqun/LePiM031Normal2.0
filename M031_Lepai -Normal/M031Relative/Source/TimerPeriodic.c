@@ -36,16 +36,29 @@ void LEDBlinkTest()
 }
 ///////////////////////////////////////////
 static uint8_t redBlinkTimes=0;
+static uint8_t lowPowerRejectBootLed=1;
 void redLedBlinkTimers(uint8_t times)
 {
 	redBlinkTimes=2*times;
+	lowPowerRejectBootLed=1;
 }
-extern void blinkred(void);
+extern void RGBConfig(uint8_t r,uint8_t g,uint8_t b);
 void redBlink()
 {
 	if(redBlinkTimes>0)
 	{
-		blinkred();
+		if(lowPowerRejectBootLed)
+		{
+			RGBConfig(60,0,0);
+			lowPowerRejectBootLed= ! lowPowerRejectBootLed;
+		}
+		else
+		{
+			{
+			RGBConfig(0,0,0);
+			lowPowerRejectBootLed= ! lowPowerRejectBootLed;
+		}
+		}
 		redBlinkTimes--;
 		if(redBlinkTimes==0)
 			LEDChange( 0 );
@@ -70,9 +83,14 @@ extern void RGB_Blink(void);
 
 uint8_t time0TickCounter=0;
 uint8_t	OneSecTickFlag=0;
+uint8_t halfSecTickFlag=0;
 void OneSecTickGenerator(void)
 {
 	time0TickCounter++;
+	if((time0TickCounter%50)==0)
+	{
+		halfSecTickFlag=1;
+	}
 	if(time0TickCounter>99)
 	{
 		OneSecTickFlag=1;
@@ -82,16 +100,25 @@ void OneSecTickGenerator(void)
 }
 extern void ChargeAndLowPowerLedDisplay(void);
 extern void I2C1PowerSpy(void);
+void halfSecRound(void)
+{
+	if(halfSecTickFlag)
+	{
+		halfSecTickFlag=0;
+		I2C1PowerSpy();
+		ChargeAndLowPowerLedDisplay();
+		redBlink();
+	}
+}
 void OneSecRound(void)
 {
+	halfSecRound( );
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
 		//LEDBlinkTest();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;
-		I2C1PowerSpy();
-		ChargeAndLowPowerLedDisplay();
-		redBlink();
+		
 	}
 }
 
