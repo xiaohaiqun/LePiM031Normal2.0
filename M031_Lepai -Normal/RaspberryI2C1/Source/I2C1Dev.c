@@ -165,13 +165,15 @@ void I2C_SlaveTxRxHandler()
 		case 0xB8:		 // Data byte in I2CDAT has been transmitted ACK has been received 
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
-			break;		
+			break;	
+		case 0x00:     //I2C Bus error;
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
+			break;
 		default:
 			break;			
 	}
 }
-
-
 
 
 /*void I2C1_IRQHandler(void)
