@@ -6,9 +6,9 @@ void TIMER_GPIO_Init()
 {
 	/* Enable TIMER module clock */
 	CLK_EnableModuleClock(TMR0_MODULE);
-	//CLK_EnableModuleClock(TMR1_MODULE);
+	CLK_EnableModuleClock(TMR1_MODULE);
 	CLK_SetModuleClock(TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0);
-	//CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
+	CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
 }
 
 void TIMER_Init(void){
@@ -57,7 +57,7 @@ void redBlink()
 			{
 			RGBConfig(0,0,0);
 			lowPowerRejectBootLed= ! lowPowerRejectBootLed;
-		}
+			}
 		}
 		redBlinkTimes--;
 		if(redBlinkTimes==0)
@@ -100,14 +100,20 @@ void OneSecTickGenerator(void)
 }
 extern void ChargeAndLowPowerLedDisplay(void);
 extern void I2C1PowerSpy(void);
+extern void doubleClikPowerChip(void);
+uint8_t secondTickCounter=0;
+extern uint8_t PowerState;
 void halfSecRound(void)
 {
 	if(halfSecTickFlag)
 	{
 		halfSecTickFlag=0;
-		I2C1PowerSpy();
-		ChargeAndLowPowerLedDisplay();
-		redBlink();
+		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
+		{	
+			//I2C1PowerSpy();
+			ChargeAndLowPowerLedDisplay();
+			redBlink();
+		}
 	}
 }
 void OneSecRound(void)
@@ -117,8 +123,7 @@ void OneSecRound(void)
 	{
 		PoweBtnLongPressHandler();
 		//LEDBlinkTest();     //To test M031 still alive!!! 
-		OneSecTickFlag=0;
-		
+		OneSecTickFlag=0;		
 	}
 }
 
