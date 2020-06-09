@@ -45,6 +45,18 @@ uint8_t PowerStateSetOff()
 ///////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////vout1 and vout2 ctl///////////////////////////////////
+void doubleClikPowerChip()
+{
+	PB13=1;
+	TIMER_Delay(TIMER1, 100000);
+	PB13=0;
+	
+	TIMER_Delay(TIMER1, 60000);
+	
+	PB13=1;
+	TIMER_Delay(TIMER1, 100000);
+	PB13=0;
+}
 #define vout12ctl 0x59
 void OpenVout1()
 {
@@ -90,16 +102,8 @@ uint8_t PowerOn(void){
 			return 1;
 		}
 		else
-			{//模拟1s内短按两次关机。
-			PB13=1;
-			TIMER_Delay(TIMER1, 100000);
-			PB13=0;
-			
-			TIMER_Delay(TIMER1, 60000);
-			
-			PB13=1;
-			TIMER_Delay(TIMER1, 100000);
-			PB13=0;
+		{//模拟1s内短按两次让电源芯片卡机。
+				doubleClikPowerChip();
 		}
 	}
 	powerOnOffFlag=0;
@@ -161,14 +165,17 @@ void IP5328Init(){
 	IP5328_WriteByte(0x81, tempdata&0x00);
 	tempdata=IP5328_ReadByte(0x84);
 	IP5328_WriteByte(0x84, tempdata&0x00);
+	//设置4灯模式计算电量。
+	tempdata=IP5328_ReadByte(0x0A);
+	IP5328_WriteByte(0x84, tempdata|0xE0);
+	
 	//测试9v
 	PowerOn();
 	
-	while((BATpowerNum)==0||(BATpowerNum>100))
 	{
 		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
 		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
-		BATpowerNum=(BATpower_Temp-2000)/40.0;
+		BATpowerNum=(BATpower_Temp-2800)/27.0;
 	}
 	
 }
@@ -189,46 +196,61 @@ void IP5328Init(){
 #define BATOCV_DAT_L  0x7A
 #define BATOCV_DAT_H  0x7B          //OCV=BATOCV*0.26855mv+2.6V 电池的开路电压，用来估算电量
 extern uint8_t NowBtn;
-uint16_t BATpower=0;
 uint8_t ChargeInfo=0;
-
+uint16_t BATpower_Temp;
 extern uint8_t data[6];
 void I2C1PowerSpy()
 {
-	uint8_t ChargeInfo_Temp=0;
+	//uint8_t ChargeInfo_Temp=0;
 	uint16_t BATpower_Temp=0;
 	uint8_t temp=0;
-	if(!powerOnOffFlag)
+	//if(!powerOnOffFlag)
 	{
-		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
-		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
-		ChargeInfo_Temp=IP5328_ReadByte(0xD7);               //充电状态	
-		//if((BATpower!=BATpower_Temp)||(ChargeInfo!=ChargeInfo_Temp))
+		//BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+		//BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+		ChargeInfo=IP5328_ReadByte(0xD7);               //充电状态	
+		//if((BATpowerNum!=BATpower_Temp)||(ChargeInfo!=ChargeInfo_Temp))
 		{
-			BATpower=BATpower_Temp;
-			temp=(BATpower_Temp-2800)/30.4;
-			//if((BATpowerNum-temp)*(BATpowerNum-temp)<100)
-				BATpowerNum=temp;
-			NowBtn=0x55;                                        //电池电量变化
-			
-			ChargeInfo=ChargeInfo_Temp;
-			switch(ChargeInfo&0x03)
-			{
-				case 0x00:  //未在充电
-					NowBtn=0x50;                             //电池
-					break;
-				case 0x01:  //涓流充电
-				case 0x02:  //恒流充电
-				case 0x03:  //恒压充电
-					NowBtn=0x51;
-					break;
-				case 0x05:  //电池充满结束
-					NowBtn=0x52;
-					break;
-				default:
-					break;
-			}
-			PB5=!PB5;
+		if(ChargeInfo&0xF0) 				//在充电
+		{
+			//BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+			//BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+			//BATpower=BATpower_Temp;
+			temp=IP5328_ReadByte(0xDB);   //充电的时候读取的是等级电量。
+			//[4:0] 11111 四格电 1111 三格电 111 两格电 11 一格电 1 低电 0 电源芯片关机。
+		}
+		else												//在放电
+		{
+			BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+			BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+			//BATpower=BATpower_Temp;
+			temp=(BATpower_Temp-2800)/27.0;
+		}
+		//temp=(BATpower_Temp-2800)/27.0;
+		if(temp>100)
+			temp=100;
+		//if((BATpowerNum-temp)*(BATpowerNum-temp)<100)
+		BATpowerNum=temp;
+		NowBtn=0x55;                                        //电池电量变化
+		
+		//ChargeInfo=ChargeInfo_Temp;
+		switch(ChargeInfo&0x03)
+		{
+			case 0x00:  //未在充电
+				NowBtn=0x50;                             //电池
+				break;
+			case 0x01:  //涓流充电
+			case 0x02:  //恒流充电
+			case 0x03:  //恒压充电
+				NowBtn=0x51;
+				break;
+			case 0x05:  //电池充满结束
+				NowBtn=0x52;
+				break;
+			default:
+				break;
+		}
+		PB5=!PB5;
 		}
 	}
 }
@@ -240,11 +262,24 @@ uint8_t lowPowerLed=0;
 uint16_t lowPowerShutDownTimer=0;
 void ChargeAndLowPowerLedDisplay(void)
 {
-	uint8_t chargeInfo=IP5328_ReadByte(0xD7);
-	if(chargeInfo&0xF0)//在充电
+	uint8_t ChargeInfo=IP5328_ReadByte(0xD7);
+	if(ChargeInfo&0xF0)//在充电
 	{
+		////////////////////////////////////////////////////////////
+		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+		if(BATpower_Temp<4100)
+			BATpowerNum=0x03;
+		else if(BATpower_Temp<4800)
+			BATpowerNum=0x07;
+		else if(BATpower_Temp<5500)
+			BATpowerNum=0x0F;
+		else
+			BATpowerNum=0x1F;
+    /////////////////////////////////////////////////////////////
+		
 		InChargeFlag=1;
-		if(chargeInfo & 0x40 )//充电充满，绿灯常亮
+		if(ChargeInfo & 0x40 )//充电充满，绿灯常亮
 		{
 			RGBConfig(0,66,0);
 		}
@@ -253,12 +288,12 @@ void ChargeAndLowPowerLedDisplay(void)
 			if(chargeLed==1)
 				RGBConfig(0,0,0);
 			else if(chargeLed==2)
-				RGBConfig(0,33,0);
+				RGBConfig(0,20,0);
 			else if(chargeLed==3)
-				RGBConfig(0,66,0);
+				RGBConfig(0,40,0);
 			else if(chargeLed==4)
 			{
-				RGBConfig(0,100,0);
+				RGBConfig(0,60,0);
 				chargeLed=0;
 			}
 			chargeLed++;	
@@ -266,13 +301,25 @@ void ChargeAndLowPowerLedDisplay(void)
 	}
 	else //不在充电
 	{
+		/////////////////////////////////////////////////////////////////
+		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+		BATpowerNum=(BATpower_Temp-2800)/27.0;
+		if(BATpowerNum>100)
+			BATpowerNum=100;
+		///////////////////////////////////////////////////////////////////		
+		
 		if(InChargeFlag)
 		{
 			InChargeFlag=0;
 			if(!LEDOnWork)
+			{
 				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
+				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
+				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
+			}
 		}
-		if((BATpowerNum<=5) && (PowerState==1))//低电量(低于百分之五)处理
+		if((BATpowerNum<=3) && (PowerState==1))//低电量(低于百分之五)处理
 		{
 			lowPowerShutDownTimer++;
 			if(lowPowerShutDownTimer<30)//低电提示30秒
@@ -293,6 +340,9 @@ void ChargeAndLowPowerLedDisplay(void)
 				PowerOff();
 				lowPowerShutDownTimer=0;
 				RGBConfig(0,0,0);
+				RGBConfig(0,0,0);
+				RGBConfig(0,0,0);
+				
 			}
 		}
 		else
@@ -303,15 +353,15 @@ void ChargeAndLowPowerLedDisplay(void)
 }
 uint8_t lowPowerDetect()
 {
-	return BATpowerNum<=10;
+	return BATpowerNum<=5;
 }
 
 void I2C1readPower(uint8_t* data)              //读取电池电量估计以及充电状态信息，两个字节
 {
-	uint16_t BATpower_Temp;
-	BATpower_Temp=(IP5328_ReadByte(0x7B));       //电池开路电压,计算电量 
-	BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
-	BATpowerNum=(BATpower_Temp-2800)/30.4;
+	//uint16_t BATpower_Temp;
+	//BATpower_Temp=(IP5328_ReadByte(0x7B));       //电池开路电压,计算电量 
+	//BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+	//BATpowerNum=(BATpower_Temp-2800)/27.0;
 	data[0]=BATpowerNum;                         //灯显模式计算的电量
 	data[1]=IP5328_ReadByte(0xD7);               //充电状态	
 	IP5328_ReadMutiByte(BATOCV_DAT_L,data+2,2);  //开路电压读取，用于进一步估算电池电量

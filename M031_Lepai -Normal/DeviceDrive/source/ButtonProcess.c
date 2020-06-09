@@ -116,6 +116,7 @@ void PoweBtnLongPressHandler()
 					Btn9timerStart=0;
 					PowerBtnPressTime=0;
 					LEDChange(green);
+					//低电量拒绝开机控制。
 					if( lowPowerDetect() )	//如果低电，不能开机，闪红灯提示。
 					{
 						redLedBlinkTimers(5);
@@ -126,7 +127,6 @@ void PoweBtnLongPressHandler()
 						PowerOn();
 						RGBBlinkTimes=10;
 					}
-						//powerOnLight();
 					LEDChange(dark);
 					InPowerStarting=0;
 					RaspberryONOFF=0;
