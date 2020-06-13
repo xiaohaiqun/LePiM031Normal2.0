@@ -27,7 +27,7 @@ void reset(){
 		Init_BMM150();
     Init_LSM6DSL();	
 		IP5328Init();	
-		TIMER_Init();//time0 start after ip5328 is ready!	
+		//TIMER_Init();//time0 start after ip5328 is ready!	
 		I2C1_Init();	
 		
 }
@@ -37,7 +37,7 @@ extern void BtnLongPressHandler(void);
 
 extern void OneSecRound(void);
 extern void TenMicSecRound(void);
-extern void I2C_SlaveTxRxHandler(void);
+//extern void I2C_SlaveTxRxHandler(void);
 int32_t main()
 {
 		reset();
@@ -50,6 +50,6 @@ int32_t main()
 			
 			BtnLongPressHandler();
 			
-			I2C_SlaveTxRxHandler();
+			//I2C_SlaveTxRxHandler();
 		}
 }

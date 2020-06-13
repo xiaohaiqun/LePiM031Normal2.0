@@ -129,12 +129,13 @@ void OneSecRound(void)
 
 void TenMicSecRound(void)
 {
-	if(timer0flag)
+	if(1)//timer0flag
 	{
 		OneSecTickGenerator();
 		BtnPressTimeCounter();
 		RGB_Blink();
 		timer0flag=0;
+		CLK_SysTickDelay(10000);
 	}
 }
 

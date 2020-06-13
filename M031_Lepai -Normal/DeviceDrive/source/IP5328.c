@@ -8,12 +8,12 @@ extern uint8_t i2c0InUseFlag;
 /////////////ip5328  i2c 读写函数封装////////////////////////////////
 uint8_t IP5328_WriteByte(uint8_t IP5328_reg, uint8_t IP5328_data)
 {
-	return I2C_WriteByteOneReg(I2C0,ip5328_slave_adress, IP5328_reg, IP5328_data);
+	return I2C_Write(ip5328_slave_adress, IP5328_reg, IP5328_data);
 }
 
 uint8_t IP5328_ReadByte(uint8_t IP5328_reg)
 {
-	 return I2C_ReadByteOneReg(I2C0,ip5328_slave_adress,IP5328_reg);
+	 return I2C_ReadOneByte(ip5328_slave_adress,IP5328_reg);
 }
 
 uint8_t IP5328_ReadMutiByte(uint8_t IP5328_reg,uint8_t* data,uint8_t len)
