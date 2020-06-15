@@ -39,12 +39,18 @@ extern uint8_t AccData[2][6];
 extern uint8_t GyroData[2][6];
 extern uint8_t MagnData[2][6];
 
+extern uint8_t powerDatap;
+extern uint8_t powerData[2][4];
+
+
 extern uint8_t btnStatus[9];
 
 static uint8_t Order=0;
 uint8_t *data;
 //uint8_t data[9]={0};
 static uint8_t datapoint=0;
+
+
 
 
 void ReadOrderHandler(uint8_t Order)
@@ -85,6 +91,7 @@ void ReadOrderHandler(uint8_t Order)
 			break;
 		case 0x8A:                   //Battery Powerdata read  
 			//I2C1readPower(data);
+			data=powerData[powerDatap];
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
@@ -104,16 +111,36 @@ void ReadOrderHandler(uint8_t Order)
 	}	
 }
 
+uint8_t SensoODR_ONOFF_HandlerFlag=0;
+uint8_t PowerHandlerFlag=0;
+static uint8_t writeOrdData;
 
+void WriteOrderHanderRound()
+{
+	if(SensoODR_ONOFF_HandlerFlag)
+	{
+		SensoODR_ONOFF_HandlerFlag=0;
+		SensoODR_ONOFF_Handler(writeOrdData);
+	}
+	if(PowerHandlerFlag)
+	{
+		PowerHandlerFlag=0;
+		PowerHandler(writeOrdData);
+	}
+}
 void WriteOrderHandler(uint8_t Order,uint8_t u8data)
 {
 	switch(Order)
 	{
 		case 0x41:
-			PowerHandler(u8data);
+			//PowerHandler(u8data);
+			PowerHandlerFlag=1;
+			writeOrdData=u8data;
 			break;
 		case 0x46:
-			SensoODR_ONOFF_Handler(u8data); //地址0x46管理传感器的开关
+			//SensoODR_ONOFF_Handler(u8data); //地址0x46管理传感器的开关
+			SensoODR_ONOFF_HandlerFlag=1;
+			writeOrdData=u8data;
 			break;
 		default:
 			break;

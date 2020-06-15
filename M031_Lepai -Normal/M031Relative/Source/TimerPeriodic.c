@@ -16,11 +16,6 @@ void TIMER_Init(void){
     TIMER_EnableInt(TIMER0);
     NVIC_EnableIRQ(TMR0_IRQn);
     TIMER_Start(TIMER0);
-	
-		//TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,2);//电量检测时钟
-    //TIMER_EnableInt(TIMER1);
-    //NVIC_EnableIRQ(TMR1_IRQn);
-    //TIMER_Start(TIMER1);
 }
 
 ///////////////////////////////////////////
@@ -74,7 +69,6 @@ void TMR0_IRQHandler(void)    //10ms中断一次
 { 
 	TIMER_ClearIntFlag(TIMER0);
 	timer0flag=1;
-	//BtnPressTimeCounter();
 }
 
 
@@ -84,6 +78,7 @@ extern void RGB_Blink(void);
 uint8_t time0TickCounter=0;
 uint8_t	OneSecTickFlag=0;
 uint8_t halfSecTickFlag=0;
+extern void TimePriod9SensorReadHandler();
 void OneSecTickGenerator(void)
 {
 	time0TickCounter++;
@@ -91,11 +86,14 @@ void OneSecTickGenerator(void)
 	{
 		halfSecTickFlag=1;
 	}
+	/*if((time0TickCounter%5)==0)//20Hz
+	{
+		
+	}*/
 	if(time0TickCounter>99)
 	{
 		OneSecTickFlag=1;
-		time0TickCounter=0;
-		
+		time0TickCounter=0;		
 	}
 }
 extern void ChargeAndLowPowerLedDisplay(void);
@@ -109,13 +107,13 @@ void halfSecRound(void)
 	{
 		halfSecTickFlag=0;
 		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
-		{	
-			//I2C1PowerSpy();
+		{				
 			ChargeAndLowPowerLedDisplay();
 			redBlink();
 		}
 	}
 }
+extern void powerDataReadRound();
 void OneSecRound(void)
 {
 	halfSecRound( );
@@ -123,7 +121,8 @@ void OneSecRound(void)
 	{
 		PoweBtnLongPressHandler();
 		//LEDBlinkTest();     //To test M031 still alive!!! 
-		OneSecTickFlag=0;		
+		OneSecTickFlag=0;	
+		powerDataReadRound();
 	}
 }
 
@@ -133,12 +132,12 @@ void TenMicSecRound(void)
 	{
 		OneSecTickGenerator();
 		BtnPressTimeCounter();
+		TimePriod9SensorReadHandler();
 		RGB_Blink();
 		timer0flag=0;
 		CLK_SysTickDelay(10000);
 	}
 }
-
 
 /*不使用timer1，所有时钟信息由timer0产生，减少中断。
 extern uint8_t i2c1InUseFlag;

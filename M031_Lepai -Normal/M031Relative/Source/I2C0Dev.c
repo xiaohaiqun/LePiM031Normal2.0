@@ -144,7 +144,7 @@ void I2C_MasterRxMulti(uint32_t u32Status)
 				//printf("6 ");
 				break;
 		case 0x58:
-				I2C0RxMultiDatas[I2C0RxRawLen++] = (uint8_t) I2C_GET_DATA(I2C0); /* Receive Data */
+				I2C0RxMultiDatas[I2C0RxMultiLen++] = (uint8_t) I2C_GET_DATA(I2C0); /* Receive Data */
 				u8Ctrl = I2C_CTL_STO_SI;                         /* Clear SI and send STOP */
 				I2C0MasterRxTxEndFlag = 1U;
 				//printf("7\n");
@@ -261,22 +261,52 @@ void I2C0_Init(void)
     I2C_EnableInt(I2C0);
     NVIC_EnableIRQ(I2C0_IRQn);
 		I2C_SET_CONTROL_REG(I2C0,I2C_CTL_SI ); 
-		NVIC_SetPriority(I2C0_IRQn,3);
-		//I2C_EnableTimeout(I2C0,1);
+		NVIC_SetPriority(I2C0_IRQn,0);
+		I2C_EnableTimeout(I2C0,1);
 }
 
+#define reTryTimes 100
 uint8_t I2C_Write(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t data)
 {		
-		SlaveAddr=u8SlaveAddr;
-		RegAddr=u8DataAddr;
-		I2C0Txdata=data;
+	uint8_t reTry=0,reReadTry=0,reReadData=0;	
+	SlaveAddr=u8SlaveAddr;
+	RegAddr=u8DataAddr;
+	I2C0Txdata=data;
 	
-		I2C0MasterRxTxEndFlag = 0;
-		I2C0Err=0;
-		u32txLen=0;
+	funMode=0x01;
+	do{
+		do{
+				I2C0MasterRxTxEndFlag = 0;
+				I2C0Err=0;
+				u32txLen=0;	  //已发送数据字节数：
+				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
+				
+				while( 1 )
+				{
+					if(I2C0MasterRxTxEndFlag | I2C0Err)
+						break;
+				}
+				reTry++;
+			}while(I2C0Err&&reTry<reTryTimes);
+		reReadData=I2C_ReadOneByte(u8SlaveAddr, u8DataAddr);
+		reReadTry++;
+	}while((reReadData!=data)&&(reReadTry<reTryTimes));
 		
-		funMode=0x01;
+	I2C0MasterRxTxEndFlag = 0;
+	return I2C0Err;
+}
 
+
+uint8_t I2C_ReadOneByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr)
+{
+	uint8_t reTry=0;
+	SlaveAddr=u8SlaveAddr;
+	RegAddr=u8DataAddr;
+	
+	funMode=0x02;
+	do{
+		I2C0Err=0;
+		I2C0MasterRxTxEndFlag = 0;
 		I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
 		
 		while( 1 )
@@ -284,62 +314,36 @@ uint8_t I2C_Write(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t data)
 			if(I2C0MasterRxTxEndFlag | I2C0Err)
 				break;
 		}
-		//if(I2C0MasterRxTxEndFlag)
-			//printf("write successful\n");
-		//if(I2C0Err)
-			//printf("write unsuccess\n");
-		I2C0MasterRxTxEndFlag = 0;
-		return I2C0Err;
-}
-
-
-uint8_t I2C_ReadOneByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr)
-{
-	SlaveAddr=u8SlaveAddr;
-	RegAddr=u8DataAddr;
-	
-	I2C0Err=0;
-	
-	funMode=0x02;
-	I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
-	
-	//printf("EF=%d\n",I2C0MasterRxTxEndFlag);
-	I2C0MasterRxTxEndFlag = 0;
-	while( 1 )
-	{
-		if(I2C0MasterRxTxEndFlag | I2C0Err)
-			break;
-	}
-		//if(I2C0MasterRxTxEndFlag)
-			//printf("read successful\n");
-		//if(I2C0Err)
-		//	printf("read unsuccess\n");
-	
+		
+		reTry++;
+		
+	}while(I2C0Err&&reTry<reTryTimes);
 	return Rxdata;
 }
 uint32_t count=0;
 uint32_t I2C_ReadMultiByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t rdata[], uint32_t u32rLen)
 {
+	uint8_t reTry=0;
 	SlaveAddr=u8SlaveAddr;
 	RegAddr=u8DataAddr;
 	I2C0RxMultiDatas = rdata;
-	I2C0MasterRxTxEndFlag = 0;
-	I2C0Err=0;
 	I2C0RxRawLen=u32rLen;
-	
 	funMode=0x03;
-	//g_u8MstDataLen = 0;
-	I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
-	
-	while( 1 )
-	{
-		if(I2C0MasterRxTxEndFlag | I2C0Err)
-			break;
-	}
-	if(I2C0MasterRxTxEndFlag)
-			//printf("read successful\n");
-	if(I2C0Err)
-		//printf("read unsuccess\n");
+	do{
+		I2C0MasterRxTxEndFlag = 0;
+		I2C0Err=0;
+		I2C0RxMultiLen=0;
+		
+		I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
+		
+		while( 1 )
+		{
+			if(I2C0MasterRxTxEndFlag | I2C0Err)
+				break;
+		}
+		
+		reTry++;
+	}while(I2C0Err&&reTry<reTryTimes);
 	return I2C0Err;
 }
 

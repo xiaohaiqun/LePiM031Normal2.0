@@ -41,6 +41,17 @@ uint8_t PowerStateSetOff()
 	}
 	return 0;
 }
+void PowerStateCheck()
+{
+	if((IP5328_ReadByte(0x59)&0x04)==0x04)
+	{
+		PowerState=1;
+	}
+	else
+	{
+		PowerState=0;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -312,11 +323,11 @@ void ChargeAndLowPowerLedDisplay(void)
 		if(InChargeFlag)
 		{
 			InChargeFlag=0;
-			if(!LEDOnWork)
 			{
 				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
 				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
 				RGBConfig(0,0,0);//不在充电就及时关闭充电指示灯。
+				//重要的事情说三遍。
 			}
 		}
 		if((BATpowerNum<=3) && (PowerState==1))//低电量(低于百分之五)处理
@@ -367,6 +378,19 @@ void I2C1readPower(uint8_t* data)              //读取电池电量估计以及�
 	IP5328_ReadMutiByte(BATOCV_DAT_L,data+2,2);  //开路电压读取，用于进一步估算电池电量
 }
 
+uint8_t powerDatap=0;
+uint8_t powerData[2][4]={0};
+void powerDataReadRound()
+{
+	if(PB12)
+	{
+		I2C1readPower(powerData[!powerDatap]);
+		powerDatap=!powerDatap;
+	}
+	
+}
+
+
 void I2C1readVout1_2_A(uint8_t* data)   //读取Vout1和vout2的输出电流，4个字节
 {
 	IP5328_ReadMutiByte(VOUT1IADC_DAT_L,data,4);
@@ -376,6 +400,9 @@ void I2C1readBAT_V_I(uint8_t* data)     //读取电池的电压和电流，4个�
 {
 	IP5328_ReadMutiByte(BATVADC_DAT_L,data,4);
 }
+
+
+
 
 //////////////////////////////////
 ///////////I2C Order handler//////

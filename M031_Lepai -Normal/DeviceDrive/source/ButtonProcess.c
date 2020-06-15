@@ -83,11 +83,11 @@ void Btn9releaseHandler()
 		LEDOnWork=0;
 }
 
-
 extern int RGBBlinkTimes;
 bool RaspberryONOFF=0;;   //标记树莓派是否确认关机。
 extern uint8_t lowPowerDetect(void);
 extern void redLedBlinkTimers(uint8_t);
+extern void PowerStateCheck();
 void PoweBtnLongPressHandler()
 {
 	if(!InPowerStarting)
@@ -105,6 +105,8 @@ void PoweBtnLongPressHandler()
 			}
 			else if(PowerBtnPressTime==2)//>=2会发送发送3遍
 			{
+				//add powerState check
+				PowerStateCheck();
 				if(PowerState==1){//软关机			
 					NowBtn=0xA9;
 					PB5=!PB5;  
@@ -136,7 +138,7 @@ void PoweBtnLongPressHandler()
 		if(RaspberryONOFF)
 		{
 			ShutDownTime++;
-			if(ShutDownTime>=10)
+			if(ShutDownTime>=15)
 			{
 				if(PB4)//如果PB4仍然为高电平（关机信号）
 				{
