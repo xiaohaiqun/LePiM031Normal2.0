@@ -249,6 +249,11 @@ void I2C0_IRQHandler(void)
     }
 		//printf(" OUT \n");
 }
+
+
+
+
+
 #define USE_I2C0_INT
 #ifdef USE_I2C0_INT
 
@@ -261,11 +266,11 @@ void I2C0_Init(void)
     I2C_EnableInt(I2C0);
     NVIC_EnableIRQ(I2C0_IRQn);
 		I2C_SET_CONTROL_REG(I2C0,I2C_CTL_SI ); 
-		NVIC_SetPriority(I2C0_IRQn,0);
-		I2C_EnableTimeout(I2C0,1);
+		//NVIC_SetPriority(I2C0_IRQn,0);
+		I2C_DisableTimeout(I2C0);
 }
 
-#define reTryTimes 100
+#define reTryTimes 20
 uint8_t I2C_Write(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t data)
 {		
 	uint8_t reTry=0,reReadTry=0,reReadData=0;	

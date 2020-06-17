@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include <pwm_light.h>
 #include "I2C0Dev.h"
+/*********************************************************************************************
+*1、第一次接入电池，电源芯片为锁定状态。
+*2、非充电状态时，如果电池电压过低会触发低电关机，电源芯片进入锁定状态
+*3、空载时，电源芯片进入休眠状态。
+*4、
+**********************************************************************************************/
+
+
 uint8_t PowerState=1;
 extern uint8_t i2c0InUseFlag;
 /////////////ip5328  i2c 读写函数封装////////////////////////////////
@@ -125,7 +133,7 @@ uint8_t PowerOff(){
 	 powerOnOffFlag=1;
 	 CloseVout1();
 	 CloseVout2();
-	 I2C_SetBusClockFreq(I2C0,9000);
+	 I2C_SetBusClockFreq(I2C0,5000);
 	 //TIMER_Stop(TIMER1);
 	 if(PowerStateSetOff())
 	 {
@@ -149,19 +157,20 @@ void IP5328Init(){
 	//Boost升压使能，charge充电使能
 	tempdata=IP5328_ReadByte(0x01);
 	IP5328_WriteByte(0x01, tempdata|0x06);	
-	//开机寄存器复位使能
-	//tempdata=IP5328_ReadByte(0x03);
-	//IP5328_WriteByte(0x03, tempdata|0x80);
+	//禁止开机寄存器复位
+	tempdata=IP5328_ReadByte(0x03);
+	IP5328_WriteByte(0x03, tempdata&0x7F);
 	//disable 芯片温度控制
 	tempdata=IP5328_ReadByte(0x04);
 	IP5328_WriteByte(0x04, 0x00);
+	
 	//LED模式寄存器使能（i2c模式下可以用过0xDB查看电量计算结果）
 	tempdata=IP5328_ReadByte(0x0A);
 	IP5328_WriteByte(0x0A, tempdata|0xE0);
 	
 	//使能同充同放
 	tempdata=IP5328_ReadByte(0x0D);
-	IP5328_WriteByte(0x0E, tempdata|0x01);
+	IP5328_WriteByte(0x0E, tempdata|0x07);
 	
 	//使能在待机时可以通过I2C访问电源芯片
 	tempdata=IP5328_ReadByte(0x0E);
@@ -364,6 +373,11 @@ void ChargeAndLowPowerLedDisplay(void)
 }
 uint8_t lowPowerDetect()
 {
+	//BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
+	//BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
+	//BATpowerNum=(BATpower_Temp-2800)/27.0;
+	//if(BATpowerNum>100)
+	//	BATpowerNum=100;
 	return BATpowerNum<=5;
 }
 
@@ -382,12 +396,11 @@ uint8_t powerDatap=0;
 uint8_t powerData[2][4]={0};
 void powerDataReadRound()
 {
-	if(PB12)
+	if(PB12&&PowerState)
 	{
 		I2C1readPower(powerData[!powerDatap]);
 		powerDatap=!powerDatap;
-	}
-	
+	}	
 }
 
 

@@ -24,12 +24,12 @@ void reset(){
 		SYS_Init();
 	  powerOnLight();		
 		I2C0_Init();
-		Init_BMM150();
+		
     Init_LSM6DSL();	
 		IP5328Init();	
-		//TIMER_Init();//time0 start after ip5328 is ready!	
+		TIMER_Init();//time0 start after ip5328 is ready!	
 		I2C1_Init();	
-		
+		Init_BMM150();
 }
 extern uint8_t PowerState;
 

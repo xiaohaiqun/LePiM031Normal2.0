@@ -96,6 +96,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 		else
 			NineSensorOnOff|=0x04;//MagnOn=1;
 	}
+	
 }
 
 
@@ -108,7 +109,7 @@ extern uint8_t PowerState;
 extern void I2C1readMagn(uint8_t *data);
 void TimePriod9SensorReadHandler()
 {
-	if(PowerState)//(time0Tick%20)==0
+	if(PB12&&PowerState)//(time0Tick%20)==0
 	{
 		if(AccOn)
 			{

@@ -108,9 +108,9 @@ void halfSecRound(void)
 		halfSecTickFlag=0;
 		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
 		{				
-			ChargeAndLowPowerLedDisplay();
-			redBlink();
+			ChargeAndLowPowerLedDisplay();			
 		}
+		redBlink();
 	}
 }
 extern void powerDataReadRound();
@@ -120,7 +120,7 @@ void OneSecRound(void)
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		//LEDBlinkTest();     //To test M031 still alive!!! 
+		LEDBlinkTest();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;	
 		powerDataReadRound();
 	}
@@ -128,14 +128,14 @@ void OneSecRound(void)
 
 void TenMicSecRound(void)
 {
-	if(1)//timer0flag
+	if(timer0flag)//timer0flag
 	{
 		OneSecTickGenerator();
 		BtnPressTimeCounter();
 		TimePriod9SensorReadHandler();
 		RGB_Blink();
 		timer0flag=0;
-		CLK_SysTickDelay(10000);
+		//CLK_SysTickDelay(10000);
 	}
 }
 

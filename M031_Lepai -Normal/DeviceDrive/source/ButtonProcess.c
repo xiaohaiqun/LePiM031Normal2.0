@@ -119,12 +119,11 @@ void PoweBtnLongPressHandler()
 					PowerBtnPressTime=0;
 					LEDChange(green);
 					//低电量拒绝开机控制。
-					if( lowPowerDetect() )	//如果低电，不能开机，闪红灯提示。
-					{
-						redLedBlinkTimers(5);
-
-					}
-					else                   //如果电量充足，执行开机
+					//if( lowPowerDetect() )	//如果低电，不能开机，闪红灯提示。
+					//{
+					//	redLedBlinkTimers(5);
+					//}
+					//else                   //如果电量充足，执行开机
 					{
 						PowerOn();
 						RGBBlinkTimes=10;
