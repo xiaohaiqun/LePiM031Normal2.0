@@ -120,7 +120,7 @@ void OneSecRound(void)
 	if(OneSecTickFlag)
 	{
 		PoweBtnLongPressHandler();
-		LEDBlinkTest();     //To test M031 still alive!!! 
+		//LEDBlinkTest();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;	
 		powerDataReadRound();
 	}
@@ -139,21 +139,3 @@ void TenMicSecRound(void)
 	}
 }
 
-/*不使用timer1，所有时钟信息由timer0产生，减少中断。
-extern uint8_t i2c1InUseFlag;
-extern uint8_t i2c0InUseFlag;
-//extern void ChargeAndLowPowerLedDisplay(void);
-void TMR1_IRQHandler(void)                              //used for  9Sensor and powerSpy
-{
-		if(TIMER_GetIntFlag(TIMER1) == 1)
-    {
-      //Clear Timer1 time-out interrupt flag
-      TIMER_ClearIntFlag(TIMER1);
-			if(!i2c1InUseFlag)
-			{	
-				//I2C1PowerSpy();
-				//ChargeAndLowPowerLedDisplay();
-			}
-    }
-}
-*/

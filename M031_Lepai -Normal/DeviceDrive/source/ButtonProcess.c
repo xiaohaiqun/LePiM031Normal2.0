@@ -106,7 +106,7 @@ void PoweBtnLongPressHandler()
 			else if(PowerBtnPressTime==2)//>=2会发送发送3遍
 			{
 				//add powerState check
-				PowerStateCheck();
+				//PowerStateCheck();        //存在问题，会误报状态。
 				if(PowerState==1){//软关机			
 					NowBtn=0xA9;
 					PB5=!PB5;  
@@ -124,10 +124,10 @@ void PoweBtnLongPressHandler()
 					//	redLedBlinkTimers(5);
 					//}
 					//else                   //如果电量充足，执行开机
-					{
+					//{
 						PowerOn();
 						RGBBlinkTimes=10;
-					}
+					//}
 					LEDChange(dark);
 					InPowerStarting=0;
 					RaspberryONOFF=0;

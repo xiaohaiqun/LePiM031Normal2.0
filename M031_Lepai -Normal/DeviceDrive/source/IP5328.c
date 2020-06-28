@@ -49,6 +49,7 @@ uint8_t PowerStateSetOff()
 	}
 	return 0;
 }
+/*
 void PowerStateCheck()
 {
 	if((IP5328_ReadByte(0x59)&0x04)==0x04)
@@ -59,7 +60,7 @@ void PowerStateCheck()
 	{
 		PowerState=0;
 	}
-}
+}*/
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -160,6 +161,7 @@ void IP5328Init(){
 	//禁止开机寄存器复位
 	tempdata=IP5328_ReadByte(0x03);
 	IP5328_WriteByte(0x03, tempdata&0x7F);
+	
 	//disable 芯片温度控制
 	tempdata=IP5328_ReadByte(0x04);
 	IP5328_WriteByte(0x04, 0x00);
@@ -170,7 +172,7 @@ void IP5328Init(){
 	
 	//使能同充同放
 	tempdata=IP5328_ReadByte(0x0D);
-	IP5328_WriteByte(0x0E, tempdata|0x07);
+	IP5328_WriteByte(0x0E, tempdata|0x01);
 	
 	//使能在待机时可以通过I2C访问电源芯片
 	tempdata=IP5328_ReadByte(0x0E);
