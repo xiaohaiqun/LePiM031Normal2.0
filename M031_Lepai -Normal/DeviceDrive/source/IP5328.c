@@ -397,7 +397,6 @@ uint8_t lowPowerDetect()
 
 void I2C1readPower(uint8_t* data)              //读取电池电量估计以及充电状态信息，两个字节
 {
-	
 	data[0]=BATpowerNum;                         //灯显模式计算的电量
 	data[1]=IP5328_ReadByte(0xD7);               //充电状态	
 	IP5328_ReadMutiByte(BATOCV_DAT_L,data+2,2);  //开路电压读取，用于进一步估算电池电量
