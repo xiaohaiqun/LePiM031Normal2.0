@@ -6,7 +6,8 @@
 
 void BMM150_WriteByte(uint8_t LSM6DSL_reg, uint8_t BMM_data)
 {
-		I2C_Write(0x10 ,  LSM6DSL_reg, BMM_data);
+		
+	I2C_Write(0x10 ,  LSM6DSL_reg, BMM_data);
 }
 
 uint8_t BMM_ReadByte(uint8_t BMM_reg)
@@ -16,7 +17,7 @@ uint8_t BMM_ReadByte(uint8_t BMM_reg)
 
 void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)
 {
-	I2C_ReadMultiBytesOneReg(I2C0,0x10, BMM_reg,data, 6);
+	I2C_ReadMultiByte(0x10, BMM_reg,data, 6);
 }
 
 #define BMM150_ODR_OPMODE_ADDR 0x4C
@@ -35,17 +36,17 @@ void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)
 void Init_BMM150()
 {
 	//printf("BMM150 init...............\n");
-	I2C_WriteByteOneReg(I2C0,0x10,0x4B,0x01); //上电，进入工作模式。
-	I2C_WriteByteOneReg(I2C0,0x10,0x4C,0x38);	//30HZ,正常模式 	
+	BMM150_WriteByte(0x4B,0x01); //上电，进入工作模式。
+	BMM150_WriteByte(0x4C,0x38);	//30HZ,正常模式 	
 }
 void BMM150_ToSleepMOde()
 {
-	I2C_WriteByteOneReg(I2C0,0x10,0x4C,0x3E);	//
+	BMM150_WriteByte(0x4C,0x3E);	//
 }
 
 void BMM150_ToNormalMode()
 {
-	I2C_WriteByteOneReg(I2C0,0x10,0x4C,0x38);	//
+	BMM150_WriteByte(0x4C,0x38);	//
 }
 
 uint8_t BMM_whoami()

@@ -14,9 +14,9 @@ void I2C1_Init(void)
     /* Get I2C1 Bus Clock */
     /* Set I2C Slave Addresses */
     I2C_SetSlaveAddr(I2C1, 0, 0x15, 0);   /* Slave Address : 0x15 */
-		//I2C_EnableInt(I2C1);
-    //NVIC_EnableIRQ(I2C1_IRQn);	
-		//I2C_EnableWakeup  ( I2C1 );
+		I2C_EnableInt(I2C1);
+    NVIC_EnableIRQ(I2C1_IRQn);	
+		I2C_EnableWakeup  ( I2C1 );
 		/* I2C enter no address SLV mode */
     I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 		//I2C_EnableTimeout(I2C1,1);
@@ -34,17 +34,23 @@ void I2C1_Close(void)
 }
 
 
-/*extern uint8_t AccP,GyroP,MagnP; //当在I2C1中断外读取九轴数据时使用
+extern uint8_t AccP,GyroP,MagnP; //当在I2C1中断外读取九轴数据时使用
 extern uint8_t AccData[2][6];
 extern uint8_t GyroData[2][6];
-extern uint8_t MagnData[2][6];*/
+extern uint8_t MagnData[2][6];
+
+extern uint8_t powerDatap;
+extern uint8_t powerData[2][4];
+
 
 extern uint8_t btnStatus[9];
 
 static uint8_t Order=0;
-
-uint8_t data[9]={0};
+uint8_t *data;
+//uint8_t data[9]={0};
 static uint8_t datapoint=0;
+
+
 
 
 void ReadOrderHandler(uint8_t Order)
@@ -57,20 +63,20 @@ void ReadOrderHandler(uint8_t Order)
 				NowBtn=0;
 			break;
 		case 0x83:
-			I2C1readAcc(data);       //Acc read
-			//data=AccData[AccP];
+			//I2C1readAcc(data);       //Acc read
+			data=AccData[AccP];
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x84:                   //Gyro read
-			I2C1readGyro(data);
-			//data=GyroData[GyroP];
+			//I2C1readGyro(data);
+			data=GyroData[GyroP];
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x85:                    //Magn read
-			I2C1readMagn(data);
-			//data=MagnData[MagnP];
+			//I2C1readMagn(data);
+			data=MagnData[MagnP];
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
@@ -84,17 +90,18 @@ void ReadOrderHandler(uint8_t Order)
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8A:                   //Battery Powerdata read  
-			I2C1readPower(data);
+			//I2C1readPower(data);
+			data=powerData[powerDatap];
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8B:                   //vout1 and vout2 I read, 
-			I2C1readVout1_2_A(data);
+			//I2C1readVout1_2_A(data);
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8C:                  //
-			I2C1readBAT_V_I(data);
+			//I2C1readBAT_V_I(data);
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
@@ -104,16 +111,36 @@ void ReadOrderHandler(uint8_t Order)
 	}	
 }
 
+uint8_t SensoODR_ONOFF_HandlerFlag=0;
+uint8_t PowerHandlerFlag=0;
+static uint8_t writeOrdData;
 
+void WriteOrderHanderRound()
+{
+	if(SensoODR_ONOFF_HandlerFlag)
+	{
+		SensoODR_ONOFF_HandlerFlag=0;
+		SensoODR_ONOFF_Handler(writeOrdData);
+	}
+	if(PowerHandlerFlag)
+	{
+		PowerHandlerFlag=0;
+		PowerHandler(writeOrdData);
+	}
+}
 void WriteOrderHandler(uint8_t Order,uint8_t u8data)
 {
 	switch(Order)
 	{
 		case 0x41:
-			PowerHandler(u8data);
+			//PowerHandler(u8data);
+			PowerHandlerFlag=1;
+			writeOrdData=u8data;
 			break;
 		case 0x46:
-			SensoODR_ONOFF_Handler(u8data); //地址0x46管理传感器的开关
+			//SensoODR_ONOFF_Handler(u8data); //地址0x46管理传感器的开关
+			SensoODR_ONOFF_HandlerFlag=1;
+			writeOrdData=u8data;
 			break;
 		default:
 			break;
@@ -165,16 +192,17 @@ void I2C_SlaveTxRxHandler()
 		case 0xB8:		 // Data byte in I2CDAT has been transmitted ACK has been received 
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
-			break;		
+			break;	
+		case 0x00:     //I2C Bus error;
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
+			break;
 		default:
 			break;			
 	}
 }
 
-
-
-
-/*void I2C1_IRQHandler(void)
+void I2C1_IRQHandler(void)
 {
 	 if(I2C_GET_TIMEOUT_FLAG(I2C1))
 	 {
@@ -187,4 +215,4 @@ void I2C_SlaveTxRxHandler()
 		I2C_SlaveTxRxHandler();
 		i2c1InUseFlag=0;		
 	 }
-}*/
+}

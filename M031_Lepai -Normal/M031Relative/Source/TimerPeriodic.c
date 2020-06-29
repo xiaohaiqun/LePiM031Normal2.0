@@ -6,9 +6,9 @@ void TIMER_GPIO_Init()
 {
 	/* Enable TIMER module clock */
 	CLK_EnableModuleClock(TMR0_MODULE);
-	//CLK_EnableModuleClock(TMR1_MODULE);
+	CLK_EnableModuleClock(TMR1_MODULE);
 	CLK_SetModuleClock(TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0);
-	//CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
+	CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_PCLK0, 0);
 }
 
 void TIMER_Init(void){
@@ -16,11 +16,6 @@ void TIMER_Init(void){
     TIMER_EnableInt(TIMER0);
     NVIC_EnableIRQ(TMR0_IRQn);
     TIMER_Start(TIMER0);
-	
-		//TIMER_Open(TIMER1, TIMER_PERIODIC_MODE,2);//电量检测时钟
-    //TIMER_EnableInt(TIMER1);
-    //NVIC_EnableIRQ(TMR1_IRQn);
-    //TIMER_Start(TIMER1);
 }
 
 ///////////////////////////////////////////
@@ -57,7 +52,7 @@ void redBlink()
 			{
 			RGBConfig(0,0,0);
 			lowPowerRejectBootLed= ! lowPowerRejectBootLed;
-		}
+			}
 		}
 		redBlinkTimes--;
 		if(redBlinkTimes==0)
@@ -74,7 +69,6 @@ void TMR0_IRQHandler(void)    //10ms中断一次
 { 
 	TIMER_ClearIntFlag(TIMER0);
 	timer0flag=1;
-	//BtnPressTimeCounter();
 }
 
 
@@ -84,6 +78,9 @@ extern void RGB_Blink(void);
 uint8_t time0TickCounter=0;
 uint8_t	OneSecTickFlag=0;
 uint8_t halfSecTickFlag=0;
+
+extern void TimePriod9SensorReadHandler(void);
+
 void OneSecTickGenerator(void)
 {
 	time0TickCounter++;
@@ -91,25 +88,38 @@ void OneSecTickGenerator(void)
 	{
 		halfSecTickFlag=1;
 	}
+	/*if((time0TickCounter%5)==0)//20Hz
+	{
+		
+	}*/
 	if(time0TickCounter>99)
 	{
 		OneSecTickFlag=1;
-		time0TickCounter=0;
-		
+		time0TickCounter=0;		
 	}
 }
 extern void ChargeAndLowPowerLedDisplay(void);
 extern void I2C1PowerSpy(void);
+
+extern void doubleClikPowerChip(void);
+uint8_t secondTickCounter=0;
+extern uint8_t PowerState;
+
 void halfSecRound(void)
 {
 	if(halfSecTickFlag)
 	{
 		halfSecTickFlag=0;
-		I2C1PowerSpy();
-		ChargeAndLowPowerLedDisplay();
+
+		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
+		{				
+			ChargeAndLowPowerLedDisplay();			
+		}
 		redBlink();
 	}
 }
+extern void powerDataReadRound(void);
+
 void OneSecRound(void)
 {
 	halfSecRound( );
@@ -117,38 +127,22 @@ void OneSecRound(void)
 	{
 		PoweBtnLongPressHandler();
 		//LEDBlinkTest();     //To test M031 still alive!!! 
-		OneSecTickFlag=0;
-		
+		OneSecTickFlag=0;	
+		powerDataReadRound();
+
 	}
 }
 
 void TenMicSecRound(void)
 {
-	if(timer0flag)
+	if(timer0flag)//timer0flag
 	{
 		OneSecTickGenerator();
 		BtnPressTimeCounter();
+		TimePriod9SensorReadHandler();
 		RGB_Blink();
 		timer0flag=0;
+		//CLK_SysTickDelay(10000);
 	}
 }
 
-
-/*不使用timer1，所有时钟信息由timer0产生，减少中断。
-extern uint8_t i2c1InUseFlag;
-extern uint8_t i2c0InUseFlag;
-//extern void ChargeAndLowPowerLedDisplay(void);
-void TMR1_IRQHandler(void)                              //used for  9Sensor and powerSpy
-{
-		if(TIMER_GetIntFlag(TIMER1) == 1)
-    {
-      //Clear Timer1 time-out interrupt flag
-      TIMER_ClearIntFlag(TIMER1);
-			if(!i2c1InUseFlag)
-			{	
-				//I2C1PowerSpy();
-				//ChargeAndLowPowerLedDisplay();
-			}
-    }
-}
-*/

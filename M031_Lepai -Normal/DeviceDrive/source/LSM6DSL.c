@@ -46,6 +46,7 @@ extern void BMM150_ToNormalMode(void);
 uint8_t AccOn=1,GyroOn=1,MagnOn=1;
 uint8_t timerPriod=100;
 uint8_t NineSensorOnOff=0;
+
 void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x01){
 			LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL1_XL, LSM6DSL_ACC_ODR_833_HZ);
@@ -81,7 +82,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	}
 	if(u8data&0x04){
 		BMM150_ToNormalMode();
-		MagnOn=I2C_ReadByteOneReg(I2C0,0x10,0x4C);
+		MagnOn=I2C_ReadOneByte(0x10,0x4C);
 		if((MagnOn&0x38)== 0x38)
 			NineSensorOnOff|=0x04;//MagnOn=1;
 		else
@@ -89,24 +90,26 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	}
 	else{
 		BMM150_ToSleepMOde();
-		MagnOn=I2C_ReadByteOneReg(I2C0,0x10,0x4C);
+		MagnOn=I2C_ReadOneByte(0x10,0x4C);
 		if((MagnOn&0x38)== 0x00)
 			NineSensorOnOff&=0xF7;//MagnOn=0;
 		else
 			NineSensorOnOff|=0x04;//MagnOn=1;
 	}
+	
 }
 
 
-/*uint8_t AccP=0,GyroP=0,MagnP=0;
+uint8_t AccP=0,GyroP=0,MagnP=0;
 uint8_t AccData[2][6]={0};
 uint8_t GyroData[2][6]={0};
 uint8_t MagnData[2][6]={0};
 
-extern uint8_t time0Tick;//九轴缓存用，放弃。。。。
+extern uint8_t PowerState;
+extern void I2C1readMagn(uint8_t *data);
 void TimePriod9SensorReadHandler()
 {
-	if(1)//(time0Tick%20)==0
+	if(PB12&&PowerState)//(time0Tick%20)==0
 	{
 		if(AccOn)
 			{
@@ -115,16 +118,16 @@ void TimePriod9SensorReadHandler()
 			}
 			if(GyroOn)
 			{
-				//I2C1readGyro(GyroData[!GyroP]);
+				I2C1readGyro(GyroData[!GyroP]);
 				GyroP=!GyroP;
 			}			
 			if(MagnOn)
 			{
-				//I2C1readMagn(MagnData[!MagnP]);
+				I2C1readMagn(MagnData[!MagnP]);
 				MagnP=!MagnP;
 			}
 	}
-}*/
+}
 
 
 
