@@ -78,7 +78,7 @@ extern void RGB_Blink(void);
 uint8_t time0TickCounter=0;
 uint8_t	OneSecTickFlag=0;
 uint8_t halfSecTickFlag=0;
-extern void TimePriod9SensorReadHandler();
+extern void TimePriod9SensorReadHandler(void);
 void OneSecTickGenerator(void)
 {
 	time0TickCounter++;
@@ -113,7 +113,7 @@ void halfSecRound(void)
 		redBlink();
 	}
 }
-extern void powerDataReadRound();
+extern void powerDataReadRound(void);
 void OneSecRound(void)
 {
 	halfSecRound( );
