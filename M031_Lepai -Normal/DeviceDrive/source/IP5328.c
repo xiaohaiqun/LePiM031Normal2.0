@@ -391,8 +391,9 @@ void ChargeAndLowPowerLedDisplay(void)
 }
 uint8_t lowPowerDetect()
 {
-
-	return (ChargeInfo&0xF0) || (BATpowerNum<=5);
+	if(ChargeInfo&0xF0)
+		return 0;
+	return BATpowerNum<=5;
 }
 
 void I2C1readPower(uint8_t* data)              //读取电池电量估计以及充电状态信息，两个字节
