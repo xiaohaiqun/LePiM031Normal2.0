@@ -108,7 +108,7 @@ void halfSecRound(void)
 		halfSecTickFlag=0;
 		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
 		{				
-			ChargeAndLowPowerLedDisplay();			
+			ChargeAndLowPowerLedDisplay();		
 		}
 		redBlink();
 	}

@@ -3,6 +3,12 @@
 #include "NuMicro.h"
 #include "BMM150.h"
 #include <I2C0Dev.h>
+/**************************************************************************
+*地磁传感器具有三种能耗模式：
+*1、挂起模式:上电复位后的默认模式，只能访问功率控制位（0x4B）信息.
+*2、睡眠模式:power位（0x4B bit0）设置为1将从挂起模式转为睡眠模式，将power位设置为0可从睡眠模式重新转为挂起模式。
+*3、活动模式：将opMode（0x4C bit2 bit1）设置为11可从睡眠模式切换到活动模式，此模式下可执行磁场测量。
+*****************************************************************************************************************/
 
 void BMM150_WriteByte(uint8_t LSM6DSL_reg, uint8_t BMM_data)
 {
@@ -36,17 +42,20 @@ void BMM150_Read6Bytes(uint8_t BMM_reg,uint8_t* data)
 void Init_BMM150()
 {
 	//printf("BMM150 init...............\n");
-	BMM150_WriteByte(0x4B,0x01); //上电，进入工作模式。
-	BMM150_WriteByte(0x4C,0x38);	//30HZ,正常模式 	
+	BMM150_WriteByte(0x4B,0x01); //上电后，将power位设置为1，由挂起模式进入睡眠模式
+	BMM150_WriteByte(0x4C,0x38);	//将地磁数据输出速率（[6:4]）设置为111b(最高的30HZ),将opMode([2:1])设置为00b,由睡眠模式进入活动模式；
+	BMM150_WriteByte(0x4D,0x80);  //允许数据溢出；
+	BMM150_WriteByte(0x4E,0x00);  //使能xyz轴，禁用中断;
 }
 void BMM150_ToSleepMOde()
 {
-	BMM150_WriteByte(0x4C,0x3E);	//
+	BMM150_WriteByte(0x4C,0x3E);	//将opMode位设置为11b，由活动模式进入睡眠模式。
 }
 
 void BMM150_ToNormalMode()
 {
-	BMM150_WriteByte(0x4C,0x38);	//
+	BMM150_WriteByte(0x4B,0x01);
+	BMM150_WriteByte(0x4C,0x38);	//由睡眠模式回到活动模式
 }
 
 uint8_t BMM_whoami()

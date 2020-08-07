@@ -33,7 +33,7 @@ uint8_t IP5328_ReadMutiByte(uint8_t IP5328_reg,uint8_t* data,uint8_t len)
 //////////////////////just used for m031 test/////////////////////////////
 uint8_t PowerStateSetOn()
 {
-	if((IP5328_ReadByte(0x59)&0x04)==0x04)
+	if((IP5328_ReadByte(0xE5)&0x03)==0x03)
 	{
 		PowerState=1;
 		return 1;
@@ -42,7 +42,7 @@ uint8_t PowerStateSetOn()
 }
 uint8_t PowerStateSetOff()
 {
-	if((IP5328_ReadByte(0x59)&0x04)==0)
+	if((IP5328_ReadByte(0xE5)&0x03)==0)
 	{
 		PowerState=0;
 		return 1;
@@ -80,32 +80,32 @@ void doubleClikPowerChip()
 #define vout12ctl 0x59
 void OpenVout1()
 {
-	uint8_t state=IP5328_ReadByte(0x0E);
-	IP5328_WriteByte(0x0E, state|0x04);
-	state=IP5328_ReadByte(vout12ctl);
+	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state|0x0C));
 }
+
 void CloseVout1()
 {
-	uint8_t state=IP5328_ReadByte(0x0E);
-	IP5328_WriteByte(0x0E, state|0x04);
-	state=IP5328_ReadByte(vout12ctl);
+	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state&0xFB));
 }
+
 void OpenVout2(void)
 {
 	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state|0x30));
 }
+
 void CloseVout2(void)
 {
 	uint8_t state=IP5328_ReadByte(vout12ctl);
 	IP5328_WriteByte(vout12ctl, (state&0xDF));
 }
+
 uint8_t powerOnOffFlag=0;
 
 uint8_t PowerOn(void){
-	uint8_t m=0;
+	uint8_t m=0,tempdata=0;
 	powerOnOffFlag=1;
 	PB13=1;
 	TIMER_Delay(TIMER1, 100000);
@@ -115,6 +115,8 @@ uint8_t PowerOn(void){
 	{
 		if(PB12)
 		{
+			tempdata=IP5328_ReadByte(0x0D);
+			IP5328_WriteByte(0x0D, tempdata | 0x01);
 			OpenVout1();
 			OpenVout2();
 			I2C_SetBusClockFreq(I2C0,400000);
@@ -131,7 +133,10 @@ uint8_t PowerOn(void){
 }
 
 uint8_t PowerOff(){
+	 uint8_t tempdata=0;
 	 powerOnOffFlag=1;
+	 tempdata=IP5328_ReadByte(0x0D);
+	 IP5328_WriteByte(0x0D, tempdata & 0xFE);
 	 CloseVout1();
 	 CloseVout2();
 	 I2C_SetBusClockFreq(I2C0,5000);
@@ -175,8 +180,8 @@ void IP5328Init(){
 	
 	//使能同充同放
 	tempdata=IP5328_ReadByte(0x0D);
-	IP5328_WriteByte(0x0E, tempdata&0xF8);
-	IP5328_WriteByte(0x0E, tempdata|0x01);
+	IP5328_WriteByte(0x0D, tempdata&0xF8);
+	IP5328_WriteByte(0x0D, tempdata|0x01);
 	
 	//charge 拔出自动开启boost/////////////////////////新加控制////////////////////
 	//使能在待机时可以通过I2C访问电源芯片
@@ -192,10 +197,11 @@ void IP5328Init(){
 	IP5328_WriteByte(0x81, tempdata&0x00);
 	//禁止轻载关机
 	tempdata=IP5328_ReadByte(0x84);
-	IP5328_WriteByte(0x84, tempdata&0x00);
+	IP5328_WriteByte(0x84, tempdata&0x38);
+	
 	//设置4灯模式计算电量。
 	tempdata=IP5328_ReadByte(0x0A);
-	IP5328_WriteByte(0x84, tempdata|0xE0);
+	IP5328_WriteByte(0x0A, tempdata|0xE0);
 	
 	//状态设定充电欠压
 	tempdata=IP5328_ReadByte(0x5A);
@@ -203,11 +209,46 @@ void IP5328Init(){
 	
 	//设置寄存器控制vout1 vout2通断
 	tempdata=IP5328_ReadByte(0x59);
-	IP5328_WriteByte(0x59, tempdata|0x3C);
+	IP5328_WriteByte(0x59, tempdata|0x3D);
 	
+	
+	//设置禁止VBUS快充
+	tempdata=IP5328_ReadByte(0x3E);
+	IP5328_WriteByte(0x3E, tempdata & 0xF0);
+	
+	//关闭输入输出快充(QC)协议
+	tempdata=IP5328_ReadByte(0xA0);
+	IP5328_WriteByte(0xA0, tempdata & 0xF0);
+	tempdata=IP5328_ReadByte(0xA1);
+	IP5328_WriteByte(0xA1, tempdata & 0xE3);
+	tempdata=IP5328_ReadByte(0xA2);
+	IP5328_WriteByte(0xA2, tempdata & 0x80);
+	//设置同充同放下DP DM为悬空状态；
+	tempdata=IP5328_ReadByte(0xAA);
+	IP5328_WriteByte(0xAA, (tempdata |0x80) & 0xBF);
+
+
+	//关闭输入输出快充(PD)协议
+	tempdata=IP5328_ReadByte(0x1C);
+	IP5328_WriteByte(0x1C, tempdata & 0xFD);
+
+	
+	
+	//充电停充电压设置（4.2V停充）
+	tempdata=IP5328_ReadByte(0x2C);
+	IP5328_WriteByte(0x2C, tempdata & 0xEF);//set bit4 as 0;
+	tempdata=IP5328_ReadByte(0x22);
+	IP5328_WriteByte(0x22, tempdata & 0xF3);//set bit3-2 as 00;
+	
+	tempdata=IP5328_ReadByte(0x21);
+	IP5328_WriteByte(0x21, tempdata | 0x0C);
+	
+	
+	//tempdata=IP5328_ReadByte(0x5A);
+	//IP5328_WriteByte(0x5A, 0x25);
+
 	//测试9v
-	PowerOn();
-	
+	PowerOn();	
 	{
 		BATpower_Temp=(IP5328_ReadByte(0x7B));          //电池开路电压,计算电量 
 		BATpower_Temp=BATpower_Temp<<8 | (IP5328_ReadByte(0x7A));
@@ -300,7 +341,7 @@ uint8_t lowPowerLed=0;
 uint16_t lowPowerShutDownTimer=0;
 void ChargeAndLowPowerLedDisplay(void)
 {
-	uint8_t ChargeInfo=IP5328_ReadByte(0xD7);
+	ChargeInfo=IP5328_ReadByte(0xD7);
 	if(ChargeInfo&0xF0)//在充电
 	{
 		////////////////////////////////////////////////////////////
@@ -392,8 +433,13 @@ void ChargeAndLowPowerLedDisplay(void)
 uint8_t lowPowerDetect()
 {
 	if(ChargeInfo&0xF0)
+	{
 		return 0;
-	return BATpowerNum<=5;
+	}
+	else
+	{
+		return BATpowerNum<=5;
+	}
 }
 
 void I2C1readPower(uint8_t* data)              //读取电池电量估计以及充电状态信息，两个字节
@@ -406,24 +452,60 @@ void I2C1readPower(uint8_t* data)              //读取电池电量估计以及�
 
 uint8_t powerDatap=0;
 uint8_t powerData[2][4]={0};
+
+uint8_t Vout12Datap=0;
+uint8_t Vout12Data[2][4]={0};
+
+uint8_t BatDatap=0;
+uint8_t BatData[2][4]={0};
+
 void powerDataReadRound()
 {
 	if(PB12&&PowerState)
 	{
 		I2C1readPower(powerData[!powerDatap]);
 		powerDatap=!powerDatap;
+		/////////////////////////////////////
+		I2C1readVout1_2_A(Vout12Data[!Vout12Datap]);
+		Vout12Datap=!Vout12Datap;
+		/////////////////////////////////////
+		I2C1readBAT_V_I(BatData[!BatDatap]);
+		BatDatap=!BatDatap;
 	}	
 }
 
 
 void I2C1readVout1_2_A(uint8_t* data)   //读取Vout1和vout2的输出电流，4个字节
-{
-	IP5328_ReadMutiByte(VOUT1IADC_DAT_L,data,4);
+	{                                       //IP5328有bug,经常读不到vout1和vout2的电流信息，所以改为读取BATOCV和输入输出功率信息。
+	int16_t temp=0;
+	IP5328_ReadMutiByte(0x7A,data,4);    //0x7A~0x7D
+	
+	temp=data[1]<<8|data[0];
+	temp=temp*0.26855+2600;
+	data[0]=temp&0x00FF;
+	data[1]=(temp&0xFF00)>>8;
+	
+	temp=data[3]<<8|data[2];
+	temp*=8.44;
+	data[2]=temp&0x00FF;
+	data[3]=(temp&0xFF00)>>8;
 }
 
 void I2C1readBAT_V_I(uint8_t* data)     //读取电池的电压和电流，4个字节
 {
-	IP5328_ReadMutiByte(BATVADC_DAT_L,data,4);
+	int16_t temp=0;
+	IP5328_ReadMutiByte(BATVADC_DAT_L,data,4);//0x64~0x67
+	
+	temp=data[1]<<8|data[0];
+	temp=temp*0.26855+2600;
+	data[0]=temp&0x00FF;
+	data[1]=(temp&0xFF00)>>8;
+	
+	temp=data[3]<<8|data[2];
+	temp*=1.27883;
+	temp= temp>0 ? temp : -temp;
+	data[2]=temp&0x00FF;
+	data[3]=(temp&0xFF00)>>8;
 }
 
 

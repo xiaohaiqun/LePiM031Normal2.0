@@ -51,7 +51,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x01){
 			LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL1_XL, LSM6DSL_ACC_ODR_833_HZ);
 			AccOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL1_XL);
-			if((AccOn&0xF0)==LSM6DSL_GYRO_ODR_833_HZ)
+			if( AccOn == LSM6DSL_GYRO_ODR_833_HZ )
 				NineSensorOnOff|=0x01;//AccOn=1;
 			else
 				NineSensorOnOff&=0xFE;//AccOn=0;
@@ -59,7 +59,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	else{
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL1_XL,LSM6DSL_ACC_ODR_POWER_DOWN );
 		AccOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL1_XL);
-		if((AccOn&0xF0)==LSM6DSL_ACC_ODR_POWER_DOWN)
+		if( AccOn == LSM6DSL_ACC_ODR_POWER_DOWN )
 			NineSensorOnOff&=0xFE;//AccOn=0;
 		else
 			NineSensorOnOff|=0x01;//AccOn=1;
@@ -67,7 +67,7 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	if(u8data&0x02){
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL2_G, LSM6DSL_GYRO_ODR_833_HZ);
 		GyroOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL2_G);
-		if((GyroOn&0xF0)== LSM6DSL_GYRO_ODR_833_HZ)
+		if( GyroOn == LSM6DSL_GYRO_ODR_833_HZ )
 			NineSensorOnOff|=0x02;//GyroOn=1;
 		else
 			NineSensorOnOff&=0xFD;//GyroOn=0;
@@ -75,26 +75,26 @@ void SensoODR_ONOFF_Handler(uint8_t u8data){
 	else{	
 		LSM6DSL_WriteByte(LSM6DSL_ACC_GYRO_CTRL2_G, LSM6DSL_GYRO_ODR_POWER_DOWN);
 		GyroOn= LSM6DSL_ReadByte(LSM6DSL_ACC_GYRO_CTRL2_G);
-		if((GyroOn&0xF0)== LSM6DSL_GYRO_ODR_POWER_DOWN)
-			NineSensorOnOff&=0xFE;//GyroOn=0;
+		if( GyroOn == LSM6DSL_GYRO_ODR_POWER_DOWN )
+			NineSensorOnOff&=0xFD;//GyroOn=0;
 		else
 			NineSensorOnOff|=0x02;//GyroOn=1;
 	}
 	if(u8data&0x04){
 		BMM150_ToNormalMode();
 		MagnOn=I2C_ReadOneByte(0x10,0x4C);
-		if((MagnOn&0x38)== 0x38)
+		if( MagnOn  == 0x38 )
 			NineSensorOnOff|=0x04;//MagnOn=1;
 		else
-			NineSensorOnOff&=0xF7;//MagnOn=0;
+			NineSensorOnOff&=0xFB;//MagnOn=0;
 	}
 	else{
 		BMM150_ToSleepMOde();
 		MagnOn=I2C_ReadOneByte(0x10,0x4C);
-		if((MagnOn&0x38)== 0x00)
-			NineSensorOnOff&=0xF7;//MagnOn=0;
+		if( MagnOn == 0x3E)
+			NineSensorOnOff &= 0xFB;//MagnOn=0;
 		else
-			NineSensorOnOff|=0x04;//MagnOn=1;
+			NineSensorOnOff |= 0x04;//MagnOn=1;
 	}
 	
 }

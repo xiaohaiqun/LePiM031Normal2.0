@@ -42,6 +42,11 @@ extern uint8_t MagnData[2][6];
 extern uint8_t powerDatap;
 extern uint8_t powerData[2][4];
 
+extern uint8_t BatDatap;
+extern uint8_t BatData[2][4];
+
+extern uint8_t Vout12Datap;
+extern uint8_t Vout12Data[2][4];
 
 extern uint8_t btnStatus[9];
 
@@ -96,11 +101,13 @@ void ReadOrderHandler(uint8_t Order)
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8B:                   //vout1 and vout2 I read, 
+			data=Vout12Data[Vout12Datap];
 			//I2C1readVout1_2_A(data);
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
 			break;
 		case 0x8C:                  //
+			data=BatData[BatDatap];
 			//I2C1readBAT_V_I(data);
 			datapoint=0;
 			I2C_SET_DATA(I2C1, data[datapoint++]);
@@ -209,6 +216,8 @@ void I2C1_IRQHandler(void)
 	 {
 			// Clear I2C1 Timeout Flag 
 			I2C_ClearTimeoutFlag(I2C1);
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+			I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 	 }
 	 else
 	 {
