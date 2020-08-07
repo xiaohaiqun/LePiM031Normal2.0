@@ -32,8 +32,8 @@ static uint8_t I2C0Err;
 static uint8_t I2C0RxRawLen;
 static uint8_t* I2C0RxMultiDatas;
 static uint8_t I2C0RxMultiLen = 0U;
-uint32_t u32txLen = 0U;
-uint8_t	I2C0tLen=0;
+uint32_t I2C0txLen = 0U;
+//uint8_t	I2C0tLen=0;
 static int8_t I2C0Txdata;
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C Rx Callback Function                                                                               */
@@ -86,8 +86,8 @@ void I2C_MasterRxOne(uint32_t u32Status)
 				break;
 		case 0x38:                                           /* Arbitration Lost */
 		default:                                             /* Unknow status */				
-				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);        /* Clear SI and send STOP */
-				u8Ctrl = I2C_CTL_SI;
+				//I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);        /* Clear SI and send STOP */
+				u8Ctrl = I2C_CTL_STO_SI;
 				I2C0Err = 1U;
 				//printf("error\n");
 				break;
@@ -151,8 +151,8 @@ void I2C_MasterRxMulti(uint32_t u32Status)
 				break;
 		case 0x38:                                           /* Arbitration Lost */
 		default:                                             /* Unknow status */
-				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);        /* Clear SI and send STOP */
-				u8Ctrl = I2C_CTL_SI;
+				//I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);        /* Clear SI and send STOP */
+				u8Ctrl = I2C_CTL_STO_SI;
 				I2C0Err = 1U;
 				//printf("error\n");
 				break;
@@ -187,11 +187,11 @@ void I2C_MasterTx(uint32_t u32Status)
 				//printf("2- ");
 				break;
 		case 0x28:
-				if (u32txLen < 1U)
+				if (I2C0txLen < 1U)
 				{
 						I2C_SET_DATA(I2C0, I2C0Txdata);
 						u8Ctrl = I2C_CTL_SI;
-						u32txLen++;
+						I2C0txLen++;
 						//printf("3 ");
 				}
 				else
@@ -204,8 +204,8 @@ void I2C_MasterTx(uint32_t u32Status)
 		case 0x00:                                         /*bus error*/				
 		case 0x38:                                         /* Arbitration Lost */
 		default:                                           /* Unknow status */
-				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);      /* Clear SI and send STOP */
-				u8Ctrl = I2C_CTL_SI;
+				//I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);      /* Clear SI and send STOP */
+				u8Ctrl = I2C_CTL_STO_SI;
 				I2C0Err = 1U;
 				//printf("error\n");
 				break;
@@ -225,6 +225,9 @@ void I2C0_IRQHandler(void)
     {
         /* Clear I2C0 Timeout Flag */
         I2C_ClearTimeoutFlag(I2C0);
+				I2C0Err=1;
+				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);
+				//LEDChange(red);
     }
     else
     {
@@ -267,7 +270,8 @@ void I2C0_Init(void)
     NVIC_EnableIRQ(I2C0_IRQn);
 		I2C_SET_CONTROL_REG(I2C0,I2C_CTL_SI ); 
 		//NVIC_SetPriority(I2C0_IRQn,0);
-		I2C_DisableTimeout(I2C0);
+		//I2C_DisableTimeout(I2C0);
+		I2C_EnableTimeout(I2C0,1);
 }
 
 #define reTryTimes 20
@@ -283,26 +287,25 @@ uint8_t I2C_Write(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t data)
 		do{
 				I2C0MasterRxTxEndFlag = 0;
 				I2C0Err=0;
-				u32txLen=0;	  //已发送数据字节数：
+				I2C0txLen=0;	  //已发送数据字节数：
 				I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
 				
 				while( 1 )
 				{
-					if(I2C0MasterRxTxEndFlag | I2C0Err)
+					if(I2C0MasterRxTxEndFlag || I2C0Err)
 						break;
 				}
 				reTry++;
 			}while(I2C0Err&&reTry<reTryTimes);
-		reReadData=I2C_ReadOneByte(u8SlaveAddr, u8DataAddr);
+		reReadData=I2C_ReadOneByte(u8SlaveAddr, u8DataAddr);//回读确认是否写入数据正确。
 		reReadTry++;
 	}while((reReadData!=data)&&(reReadTry<reTryTimes));
 		
 	I2C0MasterRxTxEndFlag = 0;
-	return I2C0Err;
+	return I2C0Err;   //返回1表示写入失败。
 }
 
-
-uint8_t I2C_ReadOneByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr)
+uint8_t I2C_ReadOneByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr)//读数成功与否结果不是很重要，没有必要返回读取成功与否。
 {
 	uint8_t reTry=0;
 	SlaveAddr=u8SlaveAddr;
@@ -316,7 +319,7 @@ uint8_t I2C_ReadOneByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr)
 		
 		while( 1 )
 		{
-			if(I2C0MasterRxTxEndFlag | I2C0Err)
+			if(I2C0MasterRxTxEndFlag || I2C0Err)
 				break;
 		}
 		
@@ -343,7 +346,7 @@ uint32_t I2C_ReadMultiByte(uint8_t u8SlaveAddr, uint8_t u8DataAddr, uint8_t rdat
 		
 		while( 1 )
 		{
-			if(I2C0MasterRxTxEndFlag | I2C0Err)
+			if(I2C0MasterRxTxEndFlag || I2C0Err)
 				break;
 		}
 		

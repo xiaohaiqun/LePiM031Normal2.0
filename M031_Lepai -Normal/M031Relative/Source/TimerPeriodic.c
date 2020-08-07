@@ -78,9 +78,7 @@ extern void RGB_Blink(void);
 uint8_t time0TickCounter=0;
 uint8_t	OneSecTickFlag=0;
 uint8_t halfSecTickFlag=0;
-
 extern void TimePriod9SensorReadHandler(void);
-
 void OneSecTickGenerator(void)
 {
 	time0TickCounter++;
@@ -100,26 +98,22 @@ void OneSecTickGenerator(void)
 }
 extern void ChargeAndLowPowerLedDisplay(void);
 extern void I2C1PowerSpy(void);
-
 extern void doubleClikPowerChip(void);
 uint8_t secondTickCounter=0;
 extern uint8_t PowerState;
-
 void halfSecRound(void)
 {
 	if(halfSecTickFlag)
 	{
 		halfSecTickFlag=0;
-
 		if(PB12)//电源芯片I2C在工作状态。  &&PowerState
 		{				
-			ChargeAndLowPowerLedDisplay();			
+			ChargeAndLowPowerLedDisplay();		
 		}
 		redBlink();
 	}
 }
 extern void powerDataReadRound(void);
-
 void OneSecRound(void)
 {
 	halfSecRound( );
@@ -129,7 +123,6 @@ void OneSecRound(void)
 		//LEDBlinkTest();     //To test M031 still alive!!! 
 		OneSecTickFlag=0;	
 		powerDataReadRound();
-
 	}
 }
 
@@ -145,4 +138,3 @@ void TenMicSecRound(void)
 		//CLK_SysTickDelay(10000);
 	}
 }
-
